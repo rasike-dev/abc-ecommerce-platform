@@ -1,8 +1,9 @@
 {
-  "name": "frontend",
+  "name": "abc-ecommerce-frontend",
   "proxy": "http://127.0.0.1:5001",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "ABC Online School eCommerce Frontend - React App",
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",

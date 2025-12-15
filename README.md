@@ -1,8 +1,6 @@
-# ProShop eCommerce Platform
+# ABC Online School - eCommerce Platform
 
 > Full-stack eCommerce platform built with React, Redux, NestJS, and MongoDB.
-
-![screenshot](https://github.com/bradtraversy/proshop_mern/blob/master/uploads/Screen%20Shot%202020-09-29%20at%205.50.52%20PM.png)
 
 ## Features
 
@@ -132,9 +130,9 @@ npm run start:prod
 
 ## License
 
-The MIT License
+MIT License
 
-Copyright (c) 2020 Traversy Media https://traversymedia.com
+Copyright (c) 2024 ABC Online School
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

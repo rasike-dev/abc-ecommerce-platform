@@ -1,7 +1,7 @@
 {
-  "name": "abc-school",
+  "name": "abc-ecommerce-platform",
   "version": "1.0.0",
-  "description": "MERN shopping cart app",
+  "description": "ABC Online School - Full-stack eCommerce platform with React and NestJS",
   "main": "index.js",
   "scripts": {
     "start": "npm run start:prod --prefix backend",
@@ -13,7 +13,7 @@
     "seed:verify": "npm run seed:verify --prefix backend",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix backend && npm run build:backend && npm install --prefix frontend && npm run build --prefix frontend"
   },
-  "author": "",
+  "author": "ABC Online School",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.13.2",
