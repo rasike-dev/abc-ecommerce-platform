@@ -12,7 +12,7 @@ const Meta = ({ title, description, keywords }) => {
 };
 
 Meta.defaultProps = {
-  title: 'IME Online School',
+  title: 'ABC Online School',
   description: 'Best Online School in Sri Lanka',
   keywords: 'online classes, sri lanka, best place',
 };

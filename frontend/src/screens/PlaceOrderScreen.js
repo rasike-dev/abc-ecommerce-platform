@@ -133,22 +133,23 @@ const PlaceOrderScreen = ({ history }) => {
                 <ListGroup variant='flush'>
                   {cart.cartItems.map((item, index) => (
                     <ListGroup.Item key={index}>
-                      <Row>
-                        <Col md={1}>
+                      <Row className='align-items-center'>
+                        <Col md={1} xs={3}>
                           <Image
                             src={item.image}
                             alt={item.name}
                             fluid
                             rounded
+                            className='cart-item-image'
                           />
                         </Col>
-                        <Col>
+                        <Col md={5} xs={9}>
                           <Link to={`/product/${item.product}`}>
                             {item.name}
                           </Link>
                         </Col>
-                        <Col md={2}>{getMonth(item.month)}</Col>
-                        <Col md={2} className='px-0'>
+                        <Col md={2} xs={6} className='mt-2 mt-md-0'>{getMonth(item.month)}</Col>
+                        <Col md={2} xs={6} className='px-0 mt-2 mt-md-0'>
                           LKR {item.price.toFixed(2)}
                         </Col>
                       </Row>

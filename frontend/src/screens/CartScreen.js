@@ -49,15 +49,21 @@ const CartScreen = ({ match, location, history }) => {
           <ListGroup variant='flush'>
             {cartItems.map((item) => (
               <ListGroup.Item key={item.product}>
-                <Row>
-                  <Col md={2}>
-                    <Image src={item.image} alt={item.name} fluid rounded />
+                <Row className='align-items-center'>
+                  <Col md={2} xs={3}>
+                    <Image 
+                      src={item.image} 
+                      alt={item.name} 
+                      fluid 
+                      rounded 
+                      className='cart-item-image'
+                    />
                   </Col>
-                  <Col md={3}>
+                  <Col md={3} xs={9} className='ps-2 ps-md-3'>
                     <Link to={`/product/${item.product}`}>{item.name}</Link>
                   </Col>
-                  <Col md={2}>LKR{item.price}</Col>
-                  <Col md={3}>
+                  <Col md={2} xs={6} className='mt-2 mt-md-0'>LKR{item.price}</Col>
+                  <Col md={3} xs={5} className='mt-2 mt-md-0'>
                     <Form.Control
                       className='px-0'
                       as='select'
@@ -88,7 +94,7 @@ const CartScreen = ({ match, location, history }) => {
                       ))} */}
                     </Form.Control>
                   </Col>
-                  <Col md={1}>
+                  <Col md={1} xs={1} className='mt-2 mt-md-0'>
                     <Button
                       type='button'
                       variant='light'

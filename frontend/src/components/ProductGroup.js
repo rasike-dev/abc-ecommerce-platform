@@ -4,9 +4,11 @@ import { Card } from 'react-bootstrap';
 
 const ProductGroup = ({ group }) => {
   return (
-    <Card className='my-3 p-3 rounded'>
+    <Card className='my-3 p-3 rounded product-card'>
       <Link to={`/products?code=${group.code}`}>
-        <Card.Img src={group.image} variant='top' style={{ height: '150px' }} />
+        <div className='product-image-container'>
+          <Card.Img src={group.image} variant='top' className='product-image' />
+        </div>
       </Link>
 
       <Card.Body>

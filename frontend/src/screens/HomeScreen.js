@@ -47,10 +47,10 @@ const HomeScreen = ({ match }) => {
         <Message variant='danger'>{error}</Message>
       ) : (
         <>
-          <Row>
-            {groups.map((group) => (
-              <Col key={group._id} sm={12} md={6} lg={4} xl={3}>
-                <ProductGroup group={group} />
+          <Row className='g-3'>
+            {products && products.map((product) => (
+              <Col key={product._id} xs={12} sm={6} md={6} lg={4} xl={3}>
+                <Product product={product} />
               </Col>
             ))}
           </Row>

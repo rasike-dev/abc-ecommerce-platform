@@ -121,7 +121,7 @@ export const getSessionDetails = (id) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/combank/${id}`, config);
+    const { data } = await axios.get(`/api/payments/combank/${id}`, config);
 
     dispatch({
       type: ORDER_SESSION_SUCCESS,
