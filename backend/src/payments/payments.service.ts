@@ -53,15 +53,25 @@ export class PaymentsService {
   }
 
   async validatePayment(orderId: string, paymentData: any) {
+    console.log('=== PAYMENT VALIDATION SERVICE ===');
+    console.log('Order ID:', orderId);
+    console.log('Payment Data:', paymentData);
+    
     const order = await this.ordersService.findById(orderId);
+    console.log('Order found:', !!order);
+    console.log('Order payment provider:', order?.paymentProvider);
+    
     const provider = this.paymentFactory.getProvider(order.paymentProvider || 'combank');
+    console.log('Payment provider:', provider.getProviderName());
 
     const isValid = await provider.validatePayment(paymentData);
+    console.log('Payment validation result:', isValid);
 
     if (isValid) {
       order.isPaid = true;
       order.paidAt = new Date();
       await order.save();
+      console.log('✅ Order marked as paid');
 
       return {
         success: true,
@@ -71,6 +81,7 @@ export class PaymentsService {
     } else {
       order.isPaymentFail = true;
       await order.save();
+      console.log('❌ Order marked as payment failed');
 
       return {
         success: false,

@@ -42,7 +42,7 @@ export class StripeProvider implements PaymentStrategy {
         line_items: [
           {
             price_data: {
-              currency: 'lkr',
+              currency: 'usd', // Using USD for wider compatibility
               product_data: {
                 name: `Order ${order._id}`,
                 description: `Payment for order ${order._id}`,
@@ -63,12 +63,14 @@ export class StripeProvider implements PaymentStrategy {
       return {
         success: true,
         transactionId: session.id,
+        redirectUrl: session.url,
         providerResponse: session,
       };
     } catch (error) {
+      console.error('Stripe session creation error:', error);
       return {
         success: false,
-        error: 'Stripe session creation failed',
+        error: `Stripe session creation failed: ${error.message}`,
         providerResponse: error,
       };
     }

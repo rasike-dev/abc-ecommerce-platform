@@ -24,6 +24,7 @@ import {
   ORDER_CREATE_PAYMENT_SESSION_REQUEST,
   ORDER_CREATE_PAYMENT_SESSION_SUCCESS,
   ORDER_CREATE_PAYMENT_SESSION_FAIL,
+  ORDER_CREATE_PAYMENT_SESSION_RESET,
   ORDER_VALIDATE_PAYMENT_REQUEST,
   ORDER_VALIDATE_PAYMENT_SUCCESS,
   ORDER_VALIDATE_PAYMENT_FAIL,
@@ -101,6 +102,8 @@ export const orderSessionReducer = (state = {}, action) => {
         loading: false,
         error: action.payload,
       };
+    case ORDER_CREATE_PAYMENT_SESSION_RESET:
+      return {};
     default:
       return state;
   }

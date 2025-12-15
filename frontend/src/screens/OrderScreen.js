@@ -27,6 +27,9 @@ import {
 const OrderScreen = ({ match, history }) => {
   const orderId = match.params.id;
   const [initiatingPayment, setInitiatingPayment] = useState(false);
+  const [paymentRetryCount, setPaymentRetryCount] = useState(0);
+  const [lastAttemptTime, setLastAttemptTime] = useState(null);
+  const [paymentBlocked, setPaymentBlocked] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -49,6 +52,81 @@ const OrderScreen = ({ match, history }) => {
     return (Math.round(num * 100) / 100).toFixed(2);
   };
 
+  // Circuit breaker constants
+  const MAX_RETRY_ATTEMPTS = 3;
+  const RETRY_COOLDOWN_MINUTES = 5;
+  const QUICK_RETRY_DELAY = 2000; // 2 seconds
+  const PAYMENT_TIMEOUT = 30000; // 30 seconds timeout
+
+  // Circuit breaker functions
+  const canAttemptPayment = () => {
+    if (paymentBlocked) return false;
+    
+    if (paymentRetryCount >= MAX_RETRY_ATTEMPTS) {
+      const timeSinceLastAttempt = lastAttemptTime ? Date.now() - lastAttemptTime : 0;
+      const cooldownPeriod = RETRY_COOLDOWN_MINUTES * 60 * 1000;
+      
+      if (timeSinceLastAttempt < cooldownPeriod) {
+        return false;
+      } else {
+        // Reset retry count after cooldown
+        setPaymentRetryCount(0);
+        setLastAttemptTime(null);
+      }
+    }
+    
+    return true;
+  };
+
+  const handlePaymentFailure = (error) => {
+    const newRetryCount = paymentRetryCount + 1;
+    setPaymentRetryCount(newRetryCount);
+    setLastAttemptTime(Date.now());
+    
+    if (newRetryCount >= MAX_RETRY_ATTEMPTS) {
+      setPaymentBlocked(true);
+      // Auto-unblock after cooldown
+      setTimeout(() => {
+        setPaymentBlocked(false);
+        setPaymentRetryCount(0);
+        setLastAttemptTime(null);
+      }, RETRY_COOLDOWN_MINUTES * 60 * 1000);
+    }
+    
+    console.error(`Payment attempt ${newRetryCount} failed:`, error);
+  };
+
+  const getRemainingCooldownTime = () => {
+    if (!lastAttemptTime) return 0;
+    const timeSinceLastAttempt = Date.now() - lastAttemptTime;
+    const cooldownPeriod = RETRY_COOLDOWN_MINUTES * 60 * 1000;
+    return Math.max(0, cooldownPeriod - timeSinceLastAttempt);
+  };
+
+  // Timeout wrapper for payment requests
+  const withTimeout = (promise, timeoutMs) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Payment request timeout')), timeoutMs)
+      )
+    ]);
+  };
+
+  // Force reset loading state
+  const resetPaymentState = () => {
+    setInitiatingPayment(false);
+  };
+
+  // Auto-reset loading state after timeout
+  const setPaymentTimeout = () => {
+    return setTimeout(() => {
+      console.warn('Payment request timed out - forcing reset');
+      resetPaymentState();
+      handlePaymentFailure(new Error('Payment request timed out'));
+    }, PAYMENT_TIMEOUT);
+  };
+
   if (!loading && order) {
     order.itemsPrice = addDecimals(
       order.orderItems.reduce((acc, item) => acc + item.price, 0)
@@ -64,71 +142,107 @@ const OrderScreen = ({ match, history }) => {
   useEffect(() => {
     if (!userInfo) {
       history.push('/login');
+      return;
     }
 
     if (!order || order._id !== orderId) {
       dispatch(getOrderDetails(orderId));
-    } else if (!order.isPaid) {
-      const handlePaymentInitiation = async () => {
-        try {
-          const providerName = order.paymentProvider || 'combank';
+      return;
+    }
 
-          if (!order.paymentResult || !order.paymentResult.sessionId) {
-            const sessionData = await dispatch(createPaymentSession(orderId, providerName));
+    // This useEffect now only handles initial order loading and user authentication
+  }, [dispatch, orderId, userInfo]); // Keep original dependencies
 
-            if (sessionData && sessionData.data && sessionData.data.redirectUrl) {
-              window.location.href = sessionData.data.redirectUrl;
-            }
+  // Separate useEffect for handling payment returns
+  useEffect(() => {
+    if (!order || order.isPaid) return;
+
+    const sessionId = query.get('session_id'); // For Stripe
+    const token = query.get('token'); // For PayPal
+    const payerId = query.get('PayerID'); // For PayPal
+    const resultIndicator = query.get('resultIndicator'); // For Combank
+    const sessionVersion = query.get('sessionVersion'); // For Combank
+    const paymentSuccess = query.get('success'); // Generic success flag from redirect
+    const cancelled = query.get('cancelled'); // Generic cancelled flag from redirect
+
+    // Only run if we have payment return parameters
+    const hasPaymentParams = sessionId || token || resultIndicator || paymentSuccess || cancelled;
+    
+    if (hasPaymentParams) {
+      console.log('=== PAYMENT RETURN DETECTED ===');
+      console.log('URL Query params:', {
+        sessionId,
+        token,
+        payerId,
+        resultIndicator,
+        sessionVersion,
+        paymentSuccess,
+        cancelled,
+      });
+      console.log('Current URL:', window.location.href);
+
+      const handlePaymentReturn = async () => {
+        // For Stripe, we need to validate if session_id exists
+        if (sessionId) {
+          console.log('Stripe return detected, validating payment...');
+          const paymentData = { sessionId };
+          
+          try {
+            const result = await dispatch(validatePayment(orderId, paymentData));
+            console.log('Stripe validation result:', result);
+            
+            // Refresh the order to get updated payment status
+            await dispatch(getOrderDetails(orderId));
+            
+            // Clean up URL parameters
+            history.replace(`/order/${orderId}`); 
+          } catch (validationError) {
+            console.error('Stripe validation error:', validationError);
           }
-        } catch (paymentSessionError) {
-          console.error('Error creating payment session:', paymentSessionError);
-        }
-      };
-
-      const handlePaymentValidation = async () => {
-        const sessionId = query.get('session_id'); // For Stripe
-        const token = query.get('token'); // For PayPal
-        const payerId = query.get('PayerID'); // For PayPal
-        const resultIndicator = query.get('resultIndicator'); // For Combank
-        const sessionVersion = query.get('sessionVersion'); // For Combank
-        const paymentSuccess = query.get('success'); // Generic success flag from redirect
-        const cancelled = query.get('cancelled'); // Generic cancelled flag from redirect
-
-        if (paymentSuccess === 'true' && (sessionId || token || resultIndicator)) {
-          const paymentData: any = {
-            ...(sessionId && { sessionId }),
-            ...(token && { token }),
+        } else if (paymentSuccess === 'true' && token) {
+          console.log('PayPal return detected, validating payment...');
+          const paymentData = {
+            token,
             ...(payerId && { payerId }),
-            ...(resultIndicator && { resultIndicator }),
+          };
+
+          try {
+            const result = await dispatch(validatePayment(orderId, paymentData));
+            console.log('PayPal validation result:', result);
+            
+            await dispatch(getOrderDetails(orderId));
+            history.replace(`/order/${orderId}`); 
+          } catch (validationError) {
+            console.error('PayPal validation error:', validationError);
+          }
+        } else if (paymentSuccess === 'true' && resultIndicator) {
+          console.log('ComBank return detected, validating payment...');
+          const paymentData = {
+            resultIndicator,
             ...(sessionVersion && { sessionVersion }),
           };
 
           try {
-            await dispatch(validatePayment(orderId, paymentData));
+            const result = await dispatch(validatePayment(orderId, paymentData));
+            console.log('ComBank validation result:', result);
+            
+            await dispatch(getOrderDetails(orderId));
             history.replace(`/order/${orderId}`); 
           } catch (validationError) {
-            console.error('Error validating payment:', validationError);
+            console.error('ComBank validation error:', validationError);
           }
         } else if (cancelled === 'true') {
           console.log('Payment was cancelled by user.');
-          history.replace(`/order/${orderId}`); // Remove query params
+          history.replace(`/order/${orderId}`);
+        } else {
+          console.log('No recognized payment return parameters found');
+          console.log('Available parameters:', { sessionId, token, payerId, resultIndicator, paymentSuccess, cancelled });
         }
       };
 
-      handlePaymentValidation();
-      // Only initiate payment if no session is active and no redirect params are present
-      if (!order.paymentResult?.sessionId && !query.get('session_id') && !query.get('token') && !query.get('resultIndicator')) {
-        handlePaymentInitiation();
-      }
+      handlePaymentReturn();
     }
-  }, [
-    dispatch,
-    orderId,
-    history,
-    order,
-    userInfo,
-    query,
-  ]);
+  }, [window.location.search, order, orderId, dispatch, history]); // Trigger when URL search params change
 
   const deliverHandler = () => {
     dispatch(deliverOrder(order));
@@ -271,43 +385,99 @@ const OrderScreen = ({ match, history }) => {
                   <Button
                     type='button'
                     className='btn-block'
-                    disabled={!order || loading || loadingSession || initiatingPayment || !userInfo || !order.paymentProvider}
-                    onClick={async () => {
-                      console.log('Initiating payment for provider:', order.paymentProvider);
-                      setInitiatingPayment(true);
-                      try {
-                        const providerName = order.paymentProvider || 'combank';
-                        console.log('Creating payment session for:', providerName);
-                        
-                        const sessionData = await dispatch(createPaymentSession(orderId, providerName));
-                        console.log('Session data received:', sessionData);
-                        
-                        console.log('Full session data structure:', JSON.stringify(sessionData, null, 2));
-                        
-                        let redirectUrl = null;
-                        
-                        // Check multiple possible locations for the redirect URL
-                        if (sessionData?.data?.redirectUrl) {
-                          redirectUrl = sessionData.data.redirectUrl;
-                        } else if (sessionData?.redirectUrl) {
-                          redirectUrl = sessionData.redirectUrl;
-                        } else if (sessionData?.data?.links) {
-                          // Check PayPal links structure
-                          const approveLink = sessionData.data.links.find(link => link.rel === 'approve');
-                          redirectUrl = approveLink?.href;
-                        }
-                        
-                        if (redirectUrl) {
-                          console.log('Redirecting to:', redirectUrl);
-                          window.location.href = redirectUrl;
-                        } else {
-                          console.error('No redirect URL found in response:', sessionData);
-                          setInitiatingPayment(false);
-                        }
-                      } catch (error) {
-                        console.error('Payment initiation failed:', error);
-                        setInitiatingPayment(false);
+                    disabled={!order || loading || loadingSession || initiatingPayment || !userInfo || !order.paymentProvider || !canAttemptPayment()}
+                    onClick={() => {
+                      if (!canAttemptPayment()) {
+                        console.log('Payment blocked by circuit breaker');
+                        return;
                       }
+
+                      console.log('=== PAYMENT INITIALIZATION STARTED ===');
+                      console.log('Order ID:', orderId);
+                      console.log('Provider:', order.paymentProvider);
+                      console.log('User Info:', !!userInfo);
+                      
+                      setInitiatingPayment(true);
+                      
+                      // Force reset after 5 seconds if still loading
+                      const forceResetTimeout = setTimeout(() => {
+                        console.warn('FORCE RESET: Payment taking too long');
+                        setInitiatingPayment(false);
+                        handlePaymentFailure(new Error('Payment initialization timed out'));
+                      }, 5000);
+                      
+                      // Check backend connectivity first
+                      fetch('/api/payments/providers')
+                        .then(response => {
+                          console.log('Backend connectivity check:', response.status);
+                          if (!response.ok) {
+                            throw new Error(`Backend not accessible: ${response.status}`);
+                          }
+                          return response.json();
+                        })
+                        .then(() => {
+                          console.log('Backend is accessible, proceeding with payment...');
+                          
+                          // Now try payment creation
+                          const providerName = order.paymentProvider || 'combank';
+                          console.log('Creating payment session for:', providerName);
+                          
+                          return dispatch(createPaymentSession(orderId, providerName));
+                        })
+                        .then(sessionData => {
+                          clearTimeout(forceResetTimeout);
+                          console.log('=== PAYMENT SESSION RESPONSE ===');
+                          console.log('Response received:', !!sessionData);
+                          console.log('Session data:', sessionData);
+                          
+                          if (sessionData && sessionData.error) {
+                            console.error('Backend error details:', sessionData.error);
+                          }
+                          
+                          if (!sessionData) {
+                            throw new Error('No response from payment service');
+                          }
+                          
+                          // Check for explicit error
+                          if (sessionData.success === false) {
+                            throw new Error(sessionData.message || 'Payment session creation failed');
+                          }
+                          
+                          // Reset circuit breaker on success
+                          setPaymentRetryCount(0);
+                          setLastAttemptTime(null);
+                          setPaymentBlocked(false);
+                          
+                          // Find redirect URL
+                          let redirectUrl = null;
+                          if (sessionData?.data?.redirectUrl) {
+                            redirectUrl = sessionData.data.redirectUrl;
+                          } else if (sessionData?.redirectUrl) {
+                            redirectUrl = sessionData.redirectUrl;
+                          } else if (sessionData?.data?.links) {
+                            const approveLink = sessionData.data.links.find(link => link.rel === 'approve');
+                            redirectUrl = approveLink?.href;
+                          }
+                          
+                          console.log('Redirect URL found:', redirectUrl);
+                          
+                          if (redirectUrl) {
+                            console.log('=== REDIRECTING TO PAYMENT ===');
+                            window.location.href = redirectUrl;
+                          } else {
+                            throw new Error('No redirect URL found in response');
+                          }
+                        })
+                        .catch(error => {
+                          clearTimeout(forceResetTimeout);
+                          console.error('=== PAYMENT INITIALIZATION FAILED ===');
+                          console.error('Error:', error);
+                          console.error('Error message:', error.message);
+                          console.error('Error stack:', error.stack);
+                          
+                          setInitiatingPayment(false);
+                          handlePaymentFailure(error);
+                        });
                     }}
                   >
                     {(loadingSession || initiatingPayment) ? (
@@ -325,6 +495,47 @@ const OrderScreen = ({ match, history }) => {
                       'Initiate Payment'
                     )}
                   </Button>
+                  
+                  {/* Cancel button when payment is taking too long */}
+                  {(loadingSession || initiatingPayment) && (
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      className="mt-2 w-100"
+                      onClick={() => {
+                        console.log('=== USER CANCELLED PAYMENT ===');
+                        console.log('Force resetting all payment states...');
+                        
+                        // Force reset all payment states
+                        setInitiatingPayment(false);
+                        setPaymentRetryCount(0);
+                        setLastAttemptTime(null);
+                        setPaymentBlocked(false);
+                        
+                        // Try to reset Redux state as well
+                        dispatch({ type: 'ORDER_CREATE_PAYMENT_SESSION_RESET' });
+                        
+                        console.log('Payment states reset by user');
+                      }}
+                    >
+                      ⚠️ Force Cancel Payment
+                    </Button>
+                  )}
+                  {/* Circuit Breaker Status Messages */}
+                  {paymentBlocked && (
+                    <div className="text-danger small mt-2">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      {' '}Too many failed attempts. Payment temporarily blocked for {Math.ceil(getRemainingCooldownTime() / (60 * 1000))} minutes.
+                    </div>
+                  )}
+                  {paymentRetryCount > 0 && paymentRetryCount < MAX_RETRY_ATTEMPTS && !paymentBlocked && (
+                    <div className="text-warning small mt-2">
+                      <i className="fas fa-info-circle"></i>
+                      {' '}Previous attempt failed. Attempt {paymentRetryCount} of {MAX_RETRY_ATTEMPTS}.
+                    </div>
+                  )}
+                  
+                  {/* Regular Status Messages */}
                   {(!order || loading) && (
                     <div className="text-muted small mt-2">
                       Loading order details...
