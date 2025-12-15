@@ -13,7 +13,7 @@ export class PaymentsService {
     const order = await this.ordersService.findById(orderId);
 
     // Determine provider - use order's paymentProvider or fallback to parameter
-    const provider = providerName || order.paymentProvider || 'combank';
+    const provider = providerName || order.paymentProvider || 'stripe';
     const paymentProvider = this.paymentFactory.getProvider(provider);
 
     const result = await paymentProvider.createCheckoutSession(order);
