@@ -4,10 +4,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { LinkContainer } from 'react-router-bootstrap';
 import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap';
 import SearchBox from './SearchBox';
+import ThemeToggle from './ThemeToggle';
 import { logout } from '../actions/userActions';
+import { useTheme } from '../context/ThemeContext';
 
 const Header = () => {
   const dispatch = useDispatch();
+  const { isDark } = useTheme();
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -21,7 +24,16 @@ const Header = () => {
 
   return (
     <header>
-      <Navbar bg='dark' variant='dark' expand='lg' collapseOnSelect>
+      <Navbar 
+        bg={isDark ? 'dark' : 'dark'} 
+        variant='dark' 
+        expand='lg' 
+        collapseOnSelect
+        style={{
+          backgroundColor: isDark ? 'var(--color-navbarBg)' : '#343a40',
+          transition: 'background-color 0.3s ease'
+        }}
+      >
         <Container>
           <LinkContainer to='/'>
             <Navbar.Brand>ABC Online School</Navbar.Brand>
@@ -81,6 +93,8 @@ const Header = () => {
                   </LinkContainer>
                 </NavDropdown>
               )}
+              {/* Theme Toggle Button */}
+              <ThemeToggle />
             </Nav>
           </Navbar.Collapse>
         </Container>

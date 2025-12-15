@@ -1,19 +1,43 @@
+/* Theme-aware CSS using CSS Custom Properties */
+
+/* Default theme colors (will be overridden by ThemeProvider) */
+:root {
+  /* These will be dynamically set by ThemeContext */
+  --color-background: #ffffff;
+  --color-backgroundSecondary: #f8f9fa;
+  --color-textPrimary: #212529;
+  --color-textSecondary: #6c757d;
+  --color-cardBackground: #ffffff;
+  --color-cardBorder: #dee2e6;
+  --color-borderColor: #dee2e6;
+}
+
+/* Apply theme colors to body */
+body {
+  background-color: var(--color-background);
+  color: var(--color-textPrimary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 main {
   min-height: 80vh;
 }
 
 h3 {
   padding: 1rem 0;
+  color: var(--color-textPrimary);
 }
 
 h1 {
   font-size: 1.8rem;
   padding: 1rem 0;
+  color: var(--color-textPrimary);
 }
 
 h2 {
   font-size: 1.4rem;
   padding: 0.5rem 0;
+  color: var(--color-textPrimary);
 }
 
 .rating span {
@@ -25,13 +49,20 @@ h2 {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background-color: var(--color-cardBackground);
+  border-color: var(--color-cardBorder);
+  transition: all 0.3s ease;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 12px var(--color-cardShadow);
 }
 
 .product-image-container {
   width: 100%;
   overflow: hidden;
   position: relative;
-  background-color: #f8f9fa;
+  background-color: var(--color-backgroundSecondary);
 }
 
 .product-overlay {
@@ -40,7 +71,7 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--color-productOverlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,12 +99,12 @@ h2 {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: white;
+  background: var(--color-wishlistBg);
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--color-wishlistBorder);
   transition: all 0.3s ease;
   opacity: 0.9;
 }
@@ -81,21 +112,21 @@ h2 {
 .wishlist-btn:hover {
   opacity: 1;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px var(--color-wishlistBorder);
 }
 
 .wishlist-btn i {
   font-size: 18px;
-  color: #666;
+  color: var(--color-textSecondary);
   transition: color 0.3s ease;
 }
 
 .wishlist-btn.active i {
-  color: #e74c3c;
+  color: var(--color-wishlistHeart);
 }
 
 .wishlist-btn:hover i {
-  color: #e74c3c;
+  color: var(--color-wishlistHeart);
 }
 
 /* Course Badges */
@@ -112,18 +143,18 @@ h2 {
 }
 
 .badge-warning {
-  background-color: #ffc107;
-  color: #212529;
+  background-color: var(--color-badgeWarning);
+  color: var(--color-badgeWarningText);
 }
 
 .badge-success {
-  background-color: #28a745;
-  color: #fff;
+  background-color: var(--color-badgeSuccess);
+  color: var(--color-badgeSuccessText);
 }
 
 .badge-info {
-  background-color: #17a2b8;
-  color: #fff;
+  background-color: var(--color-badgeInfo);
+  color: var(--color-badgeInfoText);
 }
 
 .mr-1 {
@@ -142,8 +173,8 @@ h2 {
 }
 
 .badge-danger {
-  background-color: #dc3545;
-  color: #fff;
+  background-color: var(--color-badgeDanger);
+  color: var(--color-badgeDangerText);
 }
 
 .product-image {
@@ -208,12 +239,94 @@ h2 {
   max-width: 80px;
   height: auto;
   object-fit: cover;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-borderColor);
 }
 
 /* Ensure rows align properly on mobile */
 .align-items-center {
   align-items: center !important;
+}
+
+/* Bootstrap overrides for theming */
+.card {
+  background-color: var(--color-cardBackground);
+  border-color: var(--color-cardBorder);
+  color: var(--color-textPrimary);
+}
+
+.card-title,
+.card-text {
+  color: var(--color-textPrimary);
+}
+
+.text-muted {
+  color: var(--color-textMuted) !important;
+}
+
+/* Form controls theming */
+.form-control {
+  background-color: var(--color-inputBg);
+  border-color: var(--color-inputBorder);
+  color: var(--color-inputText);
+}
+
+.form-control:focus {
+  background-color: var(--color-inputBg);
+  border-color: var(--color-inputFocus);
+  color: var(--color-inputText);
+}
+
+/* Table theming */
+.table {
+  color: var(--color-textPrimary);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: var(--color-backgroundSecondary);
+}
+
+.table-bordered {
+  border-color: var(--color-borderColor);
+}
+
+.table-bordered td,
+.table-bordered th {
+  border-color: var(--color-borderColor);
+}
+
+/* List group theming */
+.list-group-item {
+  background-color: var(--color-cardBackground);
+  border-color: var(--color-borderColor);
+  color: var(--color-textPrimary);
+}
+
+/* Alert theming */
+.alert {
+  border-color: var(--color-borderColor);
+}
+
+/* Modal theming */
+.modal-content {
+  background-color: var(--color-cardBackground);
+  color: var(--color-textPrimary);
+}
+
+.modal-header {
+  border-bottom-color: var(--color-borderColor);
+}
+
+.modal-footer {
+  border-top-color: var(--color-borderColor);
+}
+
+/* Link theming */
+a {
+  color: var(--color-linkColor);
+}
+
+a:hover {
+  color: var(--color-linkHover);
 }
 
 /* Responsive Container Adjustments */
@@ -438,4 +551,194 @@ h2 {
   .container {
     max-width: 1200px;
   }
+}
+
+/* Theme toggle button styling */
+.theme-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  transform: scale(1.1);
+}
+
+.theme-toggle-btn:focus {
+  box-shadow: none !important;
+}
+
+/* Bootstrap Button Theming */
+.btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--color-linkHover);
+  border-color: var(--color-linkHover);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-badgeWarningText);
+}
+
+.btn-info {
+  background-color: var(--color-info);
+  border-color: var(--color-info);
+}
+
+.btn-light {
+  background-color: var(--color-light);
+  border-color: var(--color-light);
+  color: var(--color-textPrimary);
+}
+
+.btn-dark {
+  background-color: var(--color-dark);
+  border-color: var(--color-dark);
+  color: var(--color-textInverse);
+}
+
+/* Bootstrap Alert Theming */
+.alert-success {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: #fff;
+}
+
+.alert-danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+
+.alert-warning {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-badgeWarningText);
+}
+
+.alert-info {
+  background-color: var(--color-info);
+  border-color: var(--color-info);
+  color: #fff;
+}
+
+/* Dropdown Menu Theming */
+.dropdown-menu {
+  background-color: var(--color-cardBackground);
+  border-color: var(--color-borderColor);
+}
+
+.dropdown-item {
+  color: var(--color-textPrimary);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--color-backgroundSecondary);
+  color: var(--color-textPrimary);
+}
+
+.dropdown-divider {
+  border-top-color: var(--color-borderColor);
+}
+
+/* Pagination Theming */
+.page-link {
+  background-color: var(--color-cardBackground);
+  border-color: var(--color-borderColor);
+  color: var(--color-linkColor);
+}
+
+.page-link:hover {
+  background-color: var(--color-backgroundSecondary);
+  border-color: var(--color-borderColor);
+  color: var(--color-linkHover);
+}
+
+.page-item.active .page-link {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.page-item.disabled .page-link {
+  background-color: var(--color-backgroundSecondary);
+  border-color: var(--color-borderColor);
+  color: var(--color-textMuted);
+}
+
+/* Breadcrumb Theming */
+.breadcrumb {
+  background-color: var(--color-backgroundSecondary);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--color-textMuted);
+}
+
+.breadcrumb-item.active {
+  color: var(--color-textPrimary);
+}
+
+/* Progress Bar Theming */
+.progress {
+  background-color: var(--color-backgroundSecondary);
+}
+
+.progress-bar {
+  background-color: var(--color-primary);
+}
+
+/* Navbar Dropdown Dark Theme Override */
+.navbar-dark .navbar-nav .nav-link {
+  color: var(--color-navbarText);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link:focus {
+  color: var(--color-navbarHover);
+}
+
+/* Input Group Theming */
+.input-group-text {
+  background-color: var(--color-backgroundSecondary);
+  border-color: var(--color-inputBorder);
+  color: var(--color-textPrimary);
+}
+
+/* Spinner Theming */
+.spinner-border {
+  color: var(--color-primary);
+}
+
+/* Close Button Theming */
+.close {
+  color: var(--color-textPrimary);
+  text-shadow: none;
+  opacity: 0.7;
+}
+
+.close:hover {
+  color: var(--color-textPrimary);
+  opacity: 1;
+}
+
+/* Smooth theme transition for all elements */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
