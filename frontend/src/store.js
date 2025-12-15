@@ -38,6 +38,7 @@ import {
 } from './reducers/orderReducers';
 import { carouselListReducer } from './reducers/carouselReducers';
 import { wishlistReducer } from './reducers/wishlistReducers';
+import { couponReducer } from './reducers/couponReducers';
 
 const reducer = combineReducers({
   productList: productListReducer,
@@ -69,6 +70,7 @@ const reducer = combineReducers({
   groupCreate: productGroupCreateReducer,
   groupUpdate: productGroupUpdateReducer,
   wishlist: wishlistReducer,
+  coupon: couponReducer,
 });
 
 const cartItemsFromStorage = localStorage.getItem('cartItems')
@@ -87,6 +89,10 @@ const wishlistItemsFromStorage = localStorage.getItem('wishlistItems')
   ? JSON.parse(localStorage.getItem('wishlistItems'))
   : [];
 
+const couponFromStorage = localStorage.getItem('coupon')
+  ? JSON.parse(localStorage.getItem('coupon'))
+  : null;
+
 const initialState = {
   cart: {
     cartItems: cartItemsFromStorage,
@@ -97,6 +103,7 @@ const initialState = {
     wishlistItems: wishlistItemsFromStorage,
     loading: false,
   },
+  coupon: couponFromStorage || {},
 };
 
 const middleware = [thunk];

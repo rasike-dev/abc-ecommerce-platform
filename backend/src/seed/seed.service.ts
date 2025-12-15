@@ -5,7 +5,8 @@ import { User, UserDocument } from '../users/schemas/user.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Group, GroupDocument } from '../groups/schemas/group.schema';
 import { Carousel, CarouselDocument } from '../carousel/schemas/carousel.schema';
-import { seedUsers, seedGroups, seedProducts, seedCarousel } from './seed.data';
+import { Coupon, CouponDocument } from '../coupons/schemas/coupon.schema';
+import { seedUsers, seedGroups, seedProducts, seedCarousel, seedCoupons } from './seed.data';
 
 @Injectable()
 export class SeedService {
@@ -16,6 +17,7 @@ export class SeedService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Group.name) private groupModel: Model<GroupDocument>,
     @InjectModel(Carousel.name) private carouselModel: Model<CarouselDocument>,
+    @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
   ) {}
 
   async seedDatabase() {
@@ -41,6 +43,10 @@ export class SeedService {
       const carouselItems = await this.seedCarousel(users);
       this.logger.log(`✓ Seeded ${carouselItems.length} carousel items`);
 
+      // Seed coupons
+      const coupons = await this.seedCoupons();
+      this.logger.log(`✓ Seeded ${coupons.length} coupons`);
+
       this.logger.log('Database seeding completed successfully!');
       return {
         success: true,
@@ -49,6 +55,7 @@ export class SeedService {
           groups: groups.length,
           products: products.length,
           carousel: carouselItems.length,
+          coupons: coupons.length,
         },
       };
     } catch (error) {
@@ -64,6 +71,7 @@ export class SeedService {
       this.productModel.deleteMany({}),
       this.groupModel.deleteMany({}),
       this.carouselModel.deleteMany({}),
+      this.couponModel.deleteMany({}),
     ]);
     this.logger.log('✓ Database cleared');
   }
@@ -167,6 +175,11 @@ export class SeedService {
 
     const carousel = await this.carouselModel.create(carouselWithUsers);
     return carousel;
+  }
+
+  private async seedCoupons(): Promise<CouponDocument[]> {
+    const coupons = await this.couponModel.create(seedCoupons);
+    return coupons;
   }
 
   async clearAll() {

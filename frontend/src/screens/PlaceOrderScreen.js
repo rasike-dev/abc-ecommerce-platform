@@ -13,6 +13,8 @@ const PlaceOrderScreen = ({ history }) => {
   const dispatch = useDispatch();
 
   const cart = useSelector((state) => state.cart);
+  const coupon = useSelector((state) => state.coupon);
+  const { coupon: appliedCoupon, discountAmount } = coupon;
 
   if (!cart.shippingAddress.address) {
     history.push('/shipping');
@@ -39,12 +41,17 @@ const PlaceOrderScreen = ({ history }) => {
   cart.itemsPrice = addDecimals(
     cart.cartItems.reduce((acc, item) => acc + item.price, 0)
   );
+  
+  // Apply discount if coupon is applied
+  cart.discountAmount = discountAmount ? addDecimals(discountAmount) : '0.00';
+  const subtotalAfterDiscount = Number(cart.itemsPrice) - Number(cart.discountAmount);
+  
   cart.shippingPrice = addDecimals(
-    Number(getBankFees(cart.itemsPrice)).toFixed(2)
+    Number(getBankFees(subtotalAfterDiscount)).toFixed(2)
   );
-  cart.taxPrice = addDecimals(Number((0.0 * cart.itemsPrice).toFixed(2)));
+  cart.taxPrice = addDecimals(Number((0.0 * subtotalAfterDiscount).toFixed(2)));
   cart.totalPrice = (
-    Number(cart.itemsPrice) +
+    subtotalAfterDiscount +
     Number(cart.shippingPrice) +
     Number(cart.taxPrice)
   ).toFixed(2);
@@ -71,6 +78,8 @@ const PlaceOrderScreen = ({ history }) => {
         shippingPrice: cart.shippingPrice,
         taxPrice: cart.taxPrice,
         totalPrice: cart.totalPrice,
+        couponCode: appliedCoupon?.code || null,
+        discountAmount: cart.discountAmount,
       })
     );
   };
@@ -181,6 +190,19 @@ const PlaceOrderScreen = ({ history }) => {
                   <Col>LKR {cart.itemsPrice}</Col>
                 </Row>
               </ListGroup.Item>
+              
+              {appliedCoupon && (
+                <ListGroup.Item>
+                  <Row>
+                    <Col>
+                      Discount ({appliedCoupon.code})
+                      <div className='small text-muted'>{appliedCoupon.description}</div>
+                    </Col>
+                    <Col className='text-success'>-LKR {cart.discountAmount}</Col>
+                  </Row>
+                </ListGroup.Item>
+              )}
+              
               <ListGroup.Item>
                 <Row>
                   <Col>Bank Charges</Col>
@@ -195,8 +217,8 @@ const PlaceOrderScreen = ({ history }) => {
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
-                  <Col>Total</Col>
-                  <Col>LKR {cart.totalPrice}</Col>
+                  <Col><strong>Total</strong></Col>
+                  <Col><strong>LKR {cart.totalPrice}</strong></Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>

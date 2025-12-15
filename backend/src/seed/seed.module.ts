@@ -5,6 +5,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
 import { Group, GroupSchema } from '../groups/schemas/group.schema';
 import { Carousel, CarouselSchema } from '../carousel/schemas/carousel.schema';
+import { Coupon, CouponSchema } from '../coupons/schemas/coupon.schema';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { Carousel, CarouselSchema } from '../carousel/schemas/carousel.schema';
       { name: Product.name, schema: ProductSchema },
       { name: Group.name, schema: GroupSchema },
       { name: Carousel.name, schema: CarouselSchema },
+      { name: Coupon.name, schema: CouponSchema },
     ]),
   ],
   providers: [SeedService],

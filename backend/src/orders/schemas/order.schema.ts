@@ -68,6 +68,12 @@ export class Order {
   @Prop({ type: PaymentResult, default: {} })
   paymentResult: PaymentResult;
 
+  @Prop()
+  couponCode: string;
+
+  @Prop({ default: 0.0 })
+  discountAmount: number;
+
   @Prop({ required: true, default: 0.0 })
   taxPrice: number;
 

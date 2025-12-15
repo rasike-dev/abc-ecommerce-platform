@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -9,12 +9,16 @@ import {
   Form,
   Button,
   Card,
+  InputGroup,
 } from 'react-bootstrap';
 import Message from '../components/Message';
 import Breadcrumb from '../components/Breadcrumb';
 import { addToCart, removeFromCart } from '../actions/cartActions';
+import { validateCoupon, removeCoupon } from '../actions/couponActions';
 
 const CartScreen = ({ match, location, history }) => {
+  const [couponCode, setCouponCode] = useState('');
+  
   const productId = match.params.id;
 
   const month = location.search ? Number(location.search.split('=')[1]) : 1;
@@ -24,11 +28,19 @@ const CartScreen = ({ match, location, history }) => {
   const cart = useSelector((state) => state.cart);
   const { cartItems } = cart;
 
+  const coupon = useSelector((state) => state.coupon);
+  const { coupon: appliedCoupon, discountAmount, error: couponError } = coupon;
+
+  const userLogin = useSelector((state) => state.userLogin);
+  const { userInfo } = userLogin;
+
   useEffect(() => {
     if (productId) {
       dispatch(addToCart(productId, month));
     }
   }, [dispatch, productId, month]);
+
+  const cartTotal = cartItems.reduce((acc, item) => acc + item.price, 0);
 
   const removeFromCartHandler = (id) => {
     dispatch(removeFromCart(id));
@@ -36,6 +48,22 @@ const CartScreen = ({ match, location, history }) => {
 
   const checkoutHandler = () => {
     history.push('/login?redirect=shipping');
+  };
+
+  const applyCouponHandler = () => {
+    if (!userInfo) {
+      alert('Please login to use coupons');
+      return;
+    }
+    if (couponCode.trim()) {
+      const productIds = cartItems.map((item) => item.product);
+      dispatch(validateCoupon(couponCode.trim().toUpperCase(), cartTotal, productIds));
+    }
+  };
+
+  const removeCouponHandler = () => {
+    dispatch(removeCoupon());
+    setCouponCode('');
   };
 
   const breadcrumbItems = [
@@ -124,9 +152,74 @@ const CartScreen = ({ match, location, history }) => {
               <h2>
                 Subtotal ({cartItems.reduce((acc, item) => acc + 1, 0)}) items
               </h2>
-              LKR
-              {cartItems.reduce((acc, item) => acc + item.price, 0).toFixed(2)}
+              LKR {cartTotal.toFixed(2)}
             </ListGroup.Item>
+
+            {/* Coupon Section */}
+            <ListGroup.Item>
+              <h5>Have a Coupon?</h5>
+              {appliedCoupon ? (
+                <div>
+                  <div className='d-flex justify-content-between align-items-center mb-2 p-2 bg-success text-white rounded'>
+                    <div>
+                      <i className='fas fa-check-circle mr-2'></i>
+                      <strong>{appliedCoupon.code}</strong> applied!
+                      <div className='small'>{appliedCoupon.description}</div>
+                    </div>
+                    <Button
+                      variant='light'
+                      size='sm'
+                      onClick={removeCouponHandler}
+                    >
+                      <i className='fas fa-times'></i>
+                    </Button>
+                  </div>
+                  <div className='d-flex justify-content-between'>
+                    <span>Discount:</span>
+                    <span className='text-success'>
+                      -LKR {discountAmount?.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <InputGroup className='mb-2'>
+                    <Form.Control
+                      type='text'
+                      placeholder='Enter coupon code'
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          applyCouponHandler();
+                        }
+                      }}
+                    />
+                    <Button
+                      variant='outline-secondary'
+                      onClick={applyCouponHandler}
+                      disabled={!couponCode.trim() || cartItems.length === 0}
+                    >
+                      Apply
+                    </Button>
+                  </InputGroup>
+                  {couponError && (
+                    <Message variant='danger'>{couponError}</Message>
+                  )}
+                </div>
+              )}
+            </ListGroup.Item>
+
+            {/* Total */}
+            {appliedCoupon && (
+              <ListGroup.Item>
+                <h4 className='d-flex justify-content-between'>
+                  <span>Total:</span>
+                  <span>LKR {(cartTotal - (discountAmount || 0)).toFixed(2)}</span>
+                </h4>
+              </ListGroup.Item>
+            )}
+
             <ListGroup.Item>
               <Button
                 type='button'

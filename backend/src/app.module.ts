@@ -11,6 +11,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SeedModule } from './seed/seed.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { CouponsModule } from './coupons/coupons.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     UploadsModule,
     SeedModule,
     WishlistModule,
+    CouponsModule,
   ],
 })
 export class AppModule {}
