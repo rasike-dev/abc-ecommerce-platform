@@ -140,4 +140,6 @@ Authorization: Bearer <token>
 
 ## License
 
-MIT
+MIT License
+
+Copyright (c) 2024 ABC Online School
