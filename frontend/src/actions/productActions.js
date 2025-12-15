@@ -27,16 +27,40 @@ import { logout } from './userActions';
 export const listProducts = (
   keyword = '',
   pageNumber = '',
-  code = null
+  code = null,
+  filters = {}
 ) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_LIST_REQUEST });
 
-    const { data } = await axios.get(
-      code !== null && code !== ''
-        ? `/api/products?keyword=${keyword}&pageNumber=${pageNumber}&code=${code}`
-        : `/api/products?keyword=${keyword}&pageNumber=${pageNumber}`
-    );
+    // Build query string
+    let queryString = `/api/products?keyword=${keyword}&pageNumber=${pageNumber}`;
+    
+    if (code !== null && code !== '') {
+      queryString += `&code=${code}`;
+    }
+    
+    if (filters && filters.grade && filters.grade !== '') {
+      queryString += `&grade=${filters.grade}`;
+    }
+    
+    if (filters && filters.subject && filters.subject !== '') {
+      queryString += `&subject=${encodeURIComponent(filters.subject)}`;
+    }
+    
+    if (filters && filters.minPrice && filters.minPrice !== '') {
+      queryString += `&minPrice=${filters.minPrice}`;
+    }
+    
+    if (filters && filters.maxPrice && filters.maxPrice !== '') {
+      queryString += `&maxPrice=${filters.maxPrice}`;
+    }
+    
+    if (filters && filters.sortBy && filters.sortBy !== '' && filters.sortBy !== null) {
+      queryString += `&sortBy=${filters.sortBy}`;
+    }
+
+    const { data } = await axios.get(queryString);
 
     dispatch({
       type: PRODUCT_LIST_SUCCESS,

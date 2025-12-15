@@ -63,6 +63,18 @@ export class Product {
 
   @Prop({ default: 0 })
   price: number;
+
+  @Prop({ default: 0 })
+  enrollmentCount: number;
+
+  @Prop({ default: false })
+  isNewCourse: boolean;
+
+  @Prop({ default: false })
+  isBestseller: boolean;
+
+  @Prop({ default: false })
+  isPopular: boolean;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

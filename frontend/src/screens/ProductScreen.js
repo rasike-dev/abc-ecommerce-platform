@@ -14,11 +14,15 @@ import Rating from '../components/Rating';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
 import Meta from '../components/Meta';
+import Breadcrumb from '../components/Breadcrumb';
+import SocialShare from '../components/SocialShare';
+import { ProductDetailSkeleton } from '../components/SkeletonLoader';
 import {
   listProductDetails,
   createProductReview,
 } from '../actions/productActions';
 import { PRODUCT_CREATE_REVIEW_RESET } from '../constants/productConstants';
+import { addToRecentlyViewed } from '../utils/recentlyViewed';
 
 const ProductScreen = ({ history, match }) => {
   const [month, setMonth] = useState(0);
@@ -51,6 +55,13 @@ const ProductScreen = ({ history, match }) => {
     }
   }, [dispatch, match, successProductReview]);
 
+  // Track product view in recently viewed
+  useEffect(() => {
+    if (product && product._id) {
+      addToRecentlyViewed(product);
+    }
+  }, [product]);
+
   const addToCartHandler = () => {
     history.push(`/cart/${match.params.id}?month=${month}`);
   };
@@ -65,13 +76,20 @@ const ProductScreen = ({ history, match }) => {
     );
   };
 
+  const breadcrumbItems = [
+    { text: 'Home', link: '/' },
+    { text: 'Classes', link: '/products' },
+    { text: product.name || 'Product Details' }
+  ];
+
   return (
     <>
+      {!loading && !error && <Breadcrumb items={breadcrumbItems} />}
       <Link className='btn btn-light my-3' to='/'>
         Go Back
       </Link>
       {loading ? (
-        <Loader />
+        <ProductDetailSkeleton />
       ) : error ? (
         <Message variant='danger'>{error}</Message>
       ) : (
@@ -102,6 +120,10 @@ const ProductScreen = ({ history, match }) => {
                   Description: {product.description}
                 </ListGroup.Item>
               </ListGroup>
+              <SocialShare 
+                title={product.name}
+                description={product.description}
+              />
             </Col>
             <Col md={4}>
               <Card>

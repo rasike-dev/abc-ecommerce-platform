@@ -10,6 +10,7 @@ import { CarouselModule } from './carousel/carousel.module';
 import { PaymentsModule } from './payments/payments.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SeedModule } from './seed/seed.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SeedModule } from './seed/seed.module';
     PaymentsModule,
     UploadsModule,
     SeedModule,
+    WishlistModule,
   ],
 })
 export class AppModule {}

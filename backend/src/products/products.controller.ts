@@ -30,16 +30,35 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all products with pagination' })
+  @ApiOperation({ summary: 'Get all products with pagination and filters' })
   @ApiQuery({ name: 'pageNumber', required: false })
   @ApiQuery({ name: 'keyword', required: false })
   @ApiQuery({ name: 'code', required: false })
+  @ApiQuery({ name: 'grade', required: false })
+  @ApiQuery({ name: 'subject', required: false })
+  @ApiQuery({ name: 'minPrice', required: false })
+  @ApiQuery({ name: 'maxPrice', required: false })
+  @ApiQuery({ name: 'sortBy', required: false })
   async findAll(
     @Query('pageNumber') pageNumber?: number,
     @Query('keyword') keyword?: string,
     @Query('code') code?: string,
+    @Query('grade') grade?: number,
+    @Query('subject') subject?: string,
+    @Query('minPrice') minPrice?: number,
+    @Query('maxPrice') maxPrice?: number,
+    @Query('sortBy') sortBy?: string,
   ) {
-    return this.productsService.findAll(pageNumber, keyword, code);
+    return this.productsService.findAll(
+      pageNumber,
+      keyword,
+      code,
+      grade,
+      subject,
+      minPrice,
+      maxPrice,
+      sortBy,
+    );
   }
 
   @Get('top')

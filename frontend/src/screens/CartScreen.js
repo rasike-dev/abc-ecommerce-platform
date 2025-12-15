@@ -11,6 +11,7 @@ import {
   Card,
 } from 'react-bootstrap';
 import Message from '../components/Message';
+import Breadcrumb from '../components/Breadcrumb';
 import { addToCart, removeFromCart } from '../actions/cartActions';
 
 const CartScreen = ({ match, location, history }) => {
@@ -37,8 +38,15 @@ const CartScreen = ({ match, location, history }) => {
     history.push('/login?redirect=shipping');
   };
 
+  const breadcrumbItems = [
+    { text: 'Home', link: '/' },
+    { text: 'Shopping Cart' }
+  ];
+
   return (
-    <Row>
+    <>
+      <Breadcrumb items={breadcrumbItems} />
+      <Row>
       <Col md={8}>
         <h1>My Cart</h1>
         {cartItems.length === 0 ? (
@@ -133,6 +141,7 @@ const CartScreen = ({ match, location, history }) => {
         </Card>
       </Col>
     </Row>
+    </>
   );
 };
 

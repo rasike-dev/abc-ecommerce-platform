@@ -12,6 +12,9 @@ const Header = () => {
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
 
+  const wishlist = useSelector((state) => state.wishlist);
+  const { wishlistItems } = wishlist;
+
   const logoutHandler = () => {
     dispatch(logout());
   };
@@ -32,6 +35,18 @@ const Header = () => {
                   <i className='fas fa-video'></i> Classes
                 </Nav.Link>
               </LinkContainer>
+              {userInfo && (
+                <LinkContainer to='/wishlist'>
+                  <Nav.Link>
+                    <i className='fas fa-heart'></i> Wishlist
+                    {wishlistItems && wishlistItems.length > 0 && (
+                      <span className='badge badge-pill badge-danger ml-1'>
+                        {wishlistItems.length}
+                      </span>
+                    )}
+                  </Nav.Link>
+                </LinkContainer>
+              )}
               <LinkContainer to='/cart'>
                 <Nav.Link>
                   <i className='fas fa-shopping-cart'></i> Cart

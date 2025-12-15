@@ -3,6 +3,7 @@ import { Form, Button } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import FormContainer from '../components/FormContainer';
 import CheckoutSteps from '../components/CheckoutSteps';
+import Breadcrumb from '../components/Breadcrumb';
 import { saveShippingAddress } from '../actions/cartActions';
 
 const ShippingScreen = ({ history }) => {
@@ -22,8 +23,16 @@ const ShippingScreen = ({ history }) => {
     history.push('/payment');
   };
 
+  const breadcrumbItems = [
+    { text: 'Home', link: '/' },
+    { text: 'Cart', link: '/cart' },
+    { text: 'Shipping' }
+  ];
+
   return (
-    <FormContainer>
+    <>
+      <Breadcrumb items={breadcrumbItems} />
+      <FormContainer>
       <CheckoutSteps step1 step2 />
       <h1>Billing</h1>
       <Form onSubmit={submitHandler}>
@@ -76,6 +85,7 @@ const ShippingScreen = ({ history }) => {
         </Button>
       </Form>
     </FormContainer>
+    </>
   );
 };
 

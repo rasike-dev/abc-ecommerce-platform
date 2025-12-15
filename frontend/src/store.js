@@ -37,6 +37,7 @@ import {
   orderSessionReducer,
 } from './reducers/orderReducers';
 import { carouselListReducer } from './reducers/carouselReducers';
+import { wishlistReducer } from './reducers/wishlistReducers';
 
 const reducer = combineReducers({
   productList: productListReducer,
@@ -67,6 +68,7 @@ const reducer = combineReducers({
   groupDelete: productGroupDeleteReducer,
   groupCreate: productGroupCreateReducer,
   groupUpdate: productGroupUpdateReducer,
+  wishlist: wishlistReducer,
 });
 
 const cartItemsFromStorage = localStorage.getItem('cartItems')
@@ -81,12 +83,20 @@ const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
   ? JSON.parse(localStorage.getItem('shippingAddress'))
   : {};
 
+const wishlistItemsFromStorage = localStorage.getItem('wishlistItems')
+  ? JSON.parse(localStorage.getItem('wishlistItems'))
+  : [];
+
 const initialState = {
   cart: {
     cartItems: cartItemsFromStorage,
     shippingAddress: shippingAddressFromStorage,
   },
   userLogin: { userInfo: userInfoFromStorage },
+  wishlist: {
+    wishlistItems: wishlistItemsFromStorage,
+    loading: false,
+  },
 };
 
 const middleware = [thunk];
