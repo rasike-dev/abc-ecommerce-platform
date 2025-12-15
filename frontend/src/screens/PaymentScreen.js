@@ -14,8 +14,8 @@ const PaymentScreen = ({ history }) => {
     history.push('/shipping');
   }
 
-  const [paymentMethod, setPaymentMethod] = useState('Online Card Payment');
-  const [paymentProvider, setPaymentProvider] = useState('combank');
+  const [paymentMethod, setPaymentMethod] = useState('Stripe Payment');
+  const [paymentProvider, setPaymentProvider] = useState('stripe');
   const [availableProviders, setAvailableProviders] = useState([]);
 
   const dispatch = useDispatch();
@@ -27,8 +27,8 @@ const PaymentScreen = ({ history }) => {
         setAvailableProviders(data.providers);
       } catch (error) {
         console.error('Failed to fetch payment providers:', error);
-        // Fallback to default providers
-        setAvailableProviders(['combank', 'paypal', 'stripe']);
+        // Fallback to default providers with stripe first
+        setAvailableProviders(['stripe', 'paypal', 'combank']);
       }
     };
 

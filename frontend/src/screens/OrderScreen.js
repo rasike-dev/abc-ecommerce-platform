@@ -419,7 +419,7 @@ const OrderScreen = ({ match, history }) => {
                           console.log('Backend is accessible, proceeding with payment...');
                           
                           // Now try payment creation
-                          const providerName = order.paymentProvider || 'combank';
+                          const providerName = order.paymentProvider || 'stripe';
                           console.log('Creating payment session for:', providerName);
                           
                           return dispatch(createPaymentSession(orderId, providerName));
