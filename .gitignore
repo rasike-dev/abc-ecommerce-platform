@@ -42,3 +42,9 @@ uploads/*
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# Documentation - ignore all .md files except README.md files
+*.md
+!README.md
+!backend/README.md
+!frontend/README.md
+
