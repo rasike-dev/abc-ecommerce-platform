@@ -12,5 +12,6 @@ export interface PaymentResult {
   transactionId?: string;
   providerResponse?: any;
   captureId?: string;
+  redirectUrl?: string;
   error?: string;
 }

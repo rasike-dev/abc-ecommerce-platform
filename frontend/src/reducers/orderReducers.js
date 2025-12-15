@@ -21,6 +21,12 @@ import {
   ORDER_DELIVER_REQUEST,
   ORDER_DELIVER_RESET,
   ORDER_CREATE_RESET,
+  ORDER_CREATE_PAYMENT_SESSION_REQUEST,
+  ORDER_CREATE_PAYMENT_SESSION_SUCCESS,
+  ORDER_CREATE_PAYMENT_SESSION_FAIL,
+  ORDER_VALIDATE_PAYMENT_REQUEST,
+  ORDER_VALIDATE_PAYMENT_SUCCESS,
+  ORDER_VALIDATE_PAYMENT_FAIL,
   ORDER_SESSION_REQUEST,
   ORDER_SESSION_SUCCESS,
   ORDER_SESSION_FAIL,
@@ -78,20 +84,36 @@ export const orderDetailsReducer = (
 export const orderSessionReducer = (state = {}, action) => {
   switch (action.type) {
     case ORDER_SESSION_REQUEST:
+    case ORDER_CREATE_PAYMENT_SESSION_REQUEST:
       return {
         ...state,
         loading: true,
       };
     case ORDER_SESSION_SUCCESS:
+    case ORDER_CREATE_PAYMENT_SESSION_SUCCESS:
       return {
         loading: false,
-        session: action.payload.data,
+        session: action.payload.data || action.payload, // Handle both old combank and new generic session response
       };
     case ORDER_SESSION_FAIL:
+    case ORDER_CREATE_PAYMENT_SESSION_FAIL:
       return {
         loading: false,
         error: action.payload,
       };
+    default:
+      return state;
+  }
+};
+
+export const orderValidatePaymentReducer = (state = {}, action) => {
+  switch (action.type) {
+    case ORDER_VALIDATE_PAYMENT_REQUEST:
+      return { loading: true };
+    case ORDER_VALIDATE_PAYMENT_SUCCESS:
+      return { loading: false, success: true, order: action.payload.order };
+    case ORDER_VALIDATE_PAYMENT_FAIL:
+      return { loading: false, error: action.payload };
     default:
       return state;
   }

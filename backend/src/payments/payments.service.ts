@@ -30,8 +30,12 @@ export class PaymentsService {
       return {
         success: true,
         message: 'Payment session created successfully',
-        data: result.providerResponse,
+        data: {
+          ...result.providerResponse,
+          redirectUrl: result.redirectUrl,
+        },
         provider: provider,
+        redirectUrl: result.redirectUrl,
       };
     } else {
       return {

@@ -49,11 +49,11 @@ const ProductScreen = ({ history, match }) => {
       setRating(0);
       setComment('');
     }
-    if (!product._id || product._id !== match.params.id) {
+    if (!product || !product._id || product._id !== match.params.id) {
       dispatch(listProductDetails(match.params.id));
       dispatch({ type: PRODUCT_CREATE_REVIEW_RESET });
     }
-  }, [dispatch, match, successProductReview]);
+  }, [dispatch, match, successProductReview, product]);
 
   // Track product view in recently viewed
   useEffect(() => {
@@ -76,15 +76,19 @@ const ProductScreen = ({ history, match }) => {
     );
   };
 
-  const breadcrumbItems = [
+  const breadcrumbItems = product && product.name ? [
     { text: 'Home', link: '/' },
     { text: 'Classes', link: '/products' },
-    { text: product.name || 'Product Details' }
+    { text: product.name }
+  ] : [
+    { text: 'Home', link: '/' },
+    { text: 'Classes', link: '/products' },
+    { text: 'Loading...' }
   ];
 
   return (
     <>
-      {!loading && !error && <Breadcrumb items={breadcrumbItems} />}
+      {!loading && !error && product && <Breadcrumb items={breadcrumbItems} />}
       <Link className='btn btn-light my-3' to='/'>
         Go Back
       </Link>
@@ -92,7 +96,7 @@ const ProductScreen = ({ history, match }) => {
         <ProductDetailSkeleton />
       ) : error ? (
         <Message variant='danger'>{error}</Message>
-      ) : (
+      ) : product ? (
         <>
           <Meta title={product.name} />
           <Row>
@@ -272,6 +276,8 @@ const ProductScreen = ({ history, match }) => {
             </Col>
           </Row>
         </>
+      ) : (
+        <Message variant='info'>Loading product details...</Message>
       )}
     </>
   );

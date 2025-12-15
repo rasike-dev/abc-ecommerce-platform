@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Message from '../components/Message';
 import CheckoutSteps from '../components/CheckoutSteps';
 import Breadcrumb from '../components/Breadcrumb';
-import { createOrder } from '../actions/orderActions';
+import { createOrder, createPaymentSession } from '../actions/orderActions';
 import { ORDER_CREATE_RESET } from '../constants/orderConstants';
 import { USER_DETAILS_RESET } from '../constants/userConstants';
 
@@ -61,12 +61,28 @@ const PlaceOrderScreen = ({ history }) => {
 
   useEffect(() => {
     if (success) {
-      history.push(`/order/${order._id}`);
+      const redirectPayment = async () => {
+        const providerName = order.paymentProvider || 'combank';
+        try {
+          const sessionData = await dispatch(createPaymentSession(order._id, providerName));
+          if (sessionData && sessionData.data && sessionData.data.redirectUrl) {
+            window.location.href = sessionData.data.redirectUrl;
+          } else {
+            // If no redirect URL, just go to order details (e.g., Combank lightbox)
+            history.push(`/order/${order._id}`);
+          }
+        } catch (error) {
+          console.error('Error creating payment session during redirect:', error);
+          history.push(`/order/${order._id}`); // Go to order details even if session creation fails
+        }
+      };
+      redirectPayment();
+
       dispatch({ type: USER_DETAILS_RESET });
       dispatch({ type: ORDER_CREATE_RESET });
     }
     // eslint-disable-next-line
-  }, [history, success]);
+  }, [history, success, dispatch, order]);
 
   const placeOrderHandler = () => {
     dispatch(
@@ -141,7 +157,7 @@ const PlaceOrderScreen = ({ history }) => {
             <ListGroup.Item>
               <h2>Payment Method</h2>
               <strong>Method: </strong>
-              {cart.paymentMethod}
+              {cart.paymentMethod.method || cart.paymentMethod}
             </ListGroup.Item>
 
             <ListGroup.Item>

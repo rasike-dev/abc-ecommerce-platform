@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Row,
@@ -7,7 +7,7 @@ import {
   Image,
   Card,
   Button,
-  Form,
+  Spinner,
 } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import Message from '../components/Message';
@@ -16,7 +16,8 @@ import {
   getOrderDetails,
   payOrder,
   deliverOrder,
-  getSessionDetails,
+  createPaymentSession,
+  validatePayment,
 } from '../actions/orderActions';
 import {
   ORDER_PAY_RESET,
@@ -25,9 +26,7 @@ import {
 
 const OrderScreen = ({ match, history }) => {
   const orderId = match.params.id;
-
-  const [sdkReady, setSdkReady] = useState(false);
-  const [isActive, setIsActive] = useState(true);
+  const [initiatingPayment, setInitiatingPayment] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -37,21 +36,20 @@ const OrderScreen = ({ match, history }) => {
   const orderPay = useSelector((state) => state.orderPay);
   const { loading: loadingPay, success: successPay } = orderPay;
 
+  const orderSession = useSelector((state) => state.orderSession);
+  const { loading: loadingSession, session, error: sessionError } = orderSession || {};
+
   const orderDeliver = useSelector((state) => state.orderDeliver);
   const { loading: loadingDeliver, success: successDeliver } = orderDeliver;
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
 
-  const sessionDetails = useSelector((state) => state.sessionDetails);
-  const { session, loading: loadingSession } = sessionDetails;
-
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2);
   };
 
-  if (!loading) {
-    //   Calculate prices
+  if (!loading && order) {
     order.itemsPrice = addDecimals(
       order.orderItems.reduce((acc, item) => acc + item.price, 0)
     );
@@ -61,169 +59,97 @@ const OrderScreen = ({ match, history }) => {
     return new URLSearchParams(useLocation().search);
   };
 
-  let query = useQuery();
-  let resultIndicator = query.get('resultIndicator');
-  let sessionVersion = query.get('sessionVersion');
-
-  console.log(resultIndicator, sessionVersion);
+  const query = useQuery();
 
   useEffect(() => {
     if (!userInfo) {
       history.push('/login');
     }
 
-    const addPayPalScript = async () => {
-      // const { data: clientId } = await axios.get('/api/config/paypal');
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = `https://cbcmpgs.gateway.mastercard.com/checkout/version/56/checkout.js`;
-      script.async = true;
-      script.onload = () => {
-        setSdkReady(true);
-      };
-      document.body.appendChild(script);
-    };
-
-    if (!order || successPay || order._id !== orderId) {
-      dispatch({ type: ORDER_PAY_RESET });
-      // dispatch({ type: ORDER_DELIVER_RESET });
+    if (!order || order._id !== orderId) {
       dispatch(getOrderDetails(orderId));
     } else if (!order.isPaid) {
-      if (!window.Checkout) {
-        addPayPalScript();
-      } else {
-        setSdkReady(true);
-      }
+      const handlePaymentInitiation = async () => {
+        try {
+          const providerName = order.paymentProvider || 'combank';
 
-      if (!session && !resultIndicator) {
-        dispatch(getSessionDetails(orderId));
-      } else if (resultIndicator && !loading) {
-        const paymentResult = {
-          resultIndicator: resultIndicator,
-          sessionVersion: sessionVersion,
-        };
+          if (!order.paymentResult || !order.paymentResult.sessionId) {
+            const sessionData = await dispatch(createPaymentSession(orderId, providerName));
 
-        dispatch(payOrder(orderId, paymentResult));
+            if (sessionData && sessionData.data && sessionData.data.redirectUrl) {
+              window.location.href = sessionData.data.redirectUrl;
+            }
+          }
+        } catch (paymentSessionError) {
+          console.error('Error creating payment session:', paymentSessionError);
+        }
+      };
+
+      const handlePaymentValidation = async () => {
+        const sessionId = query.get('session_id'); // For Stripe
+        const token = query.get('token'); // For PayPal
+        const payerId = query.get('PayerID'); // For PayPal
+        const resultIndicator = query.get('resultIndicator'); // For Combank
+        const sessionVersion = query.get('sessionVersion'); // For Combank
+        const paymentSuccess = query.get('success'); // Generic success flag from redirect
+        const cancelled = query.get('cancelled'); // Generic cancelled flag from redirect
+
+        if (paymentSuccess === 'true' && (sessionId || token || resultIndicator)) {
+          const paymentData: any = {
+            ...(sessionId && { sessionId }),
+            ...(token && { token }),
+            ...(payerId && { payerId }),
+            ...(resultIndicator && { resultIndicator }),
+            ...(sessionVersion && { sessionVersion }),
+          };
+
+          try {
+            await dispatch(validatePayment(orderId, paymentData));
+            history.replace(`/order/${orderId}`); 
+          } catch (validationError) {
+            console.error('Error validating payment:', validationError);
+          }
+        } else if (cancelled === 'true') {
+          console.log('Payment was cancelled by user.');
+          history.replace(`/order/${orderId}`); // Remove query params
+        }
+      };
+
+      handlePaymentValidation();
+      // Only initiate payment if no session is active and no redirect params are present
+      if (!order.paymentResult?.sessionId && !query.get('session_id') && !query.get('token') && !query.get('resultIndicator')) {
+        handlePaymentInitiation();
       }
-    } else if (order.isPaid) {
-      console.log('order paid');
     }
   }, [
     dispatch,
     orderId,
-    successPay,
+    history,
     order,
-    session,
-    resultIndicator,
     userInfo,
+    query,
   ]);
-
-  const successPaymentHandler = (paymentResult) => {
-    console.log(paymentResult);
-    dispatch(payOrder(orderId, paymentResult));
-  };
 
   const deliverHandler = () => {
     dispatch(deliverOrder(order));
   };
 
-  const showLightBoxView = () => {
-    dispatch({ type: ORDER_PAY_RESET });
-    console.log(session.sessionId);
-    window.Checkout.configure({
-      session: {
-        id: session.sessionId
-          ? session.sessionId
-          : order.paymentResult.sessionId,
-      },
-      merchant: 'TESTABCSCHOOLLKR',
-      order: {
-        amount: order.totalPrice,
-        currency: 'LKR',
-        description: 'Ordered goods',
-        id: order._id,
-      },
-      interaction: {
-        displayControl: {
-          // you may change these settings as you prefer
-          billingAddress: 'HIDE',
-          customerEmail: 'HIDE',
-          orderSummary: 'SHOW',
-          shipping: 'HIDE',
-        },
-        merchant: {
-          name: 'ABC Online School',
-          address: {
-            line1: 'Kotte',
-            line2: 'Sri Lanka',
-          },
-        },
-        operation: 'PURCHASE',
-      },
-    });
-    window.Checkout.showLightbox();
-  };
-
-  const showPaymentPage = () => {
-    dispatch({ type: ORDER_PAY_RESET });
-    window.Checkout.configure({
-      session: {
-        id: session.sessionId
-          ? session.sessionId
-          : order.paymentResult.sessionId,
-      },
-      interaction: {
-        displayControl: {
-          // you may change these settings as you prefer
-          billingAddress: 'HIDE',
-          customerEmail: 'HIDE',
-          orderSummary: 'SHOW',
-          shipping: 'HIDE',
-        },
-        merchant: {
-          name: 'ABC Online School',
-          address: {
-            line1: 'Kotte',
-            line2: 'Sri Lanka',
-          },
-        },
-      },
-    });
-    window.Checkout.showPaymentPage();
-  };
-
   const getMonth = (month) => {
     switch (month) {
-      case 1:
-        return 'January';
-      case 2:
-        return 'February';
-      case 3:
-        return 'March';
-      case 4:
-        return 'April';
-      case 5:
-        return 'May';
-      case 6:
-        return 'June';
-      case 7:
-        return 'July';
-      case 8:
-        return 'August';
-      case 9:
-        return 'September';
-      case 10:
-        return 'October';
-      case 11:
-        return 'November';
-      case 12:
-        return 'December';
+      case 1: return 'January';
+      case 2: return 'February';
+      case 3: return 'March';
+      case 4: return 'April';
+      case 5: return 'May';
+      case 6: return 'June';
+      case 7: return 'July';
+      case 8: return 'August';
+      case 9: return 'September';
+      case 10: return 'October';
+      case 11: return 'November';
+      case 12: return 'December';
+      default: return '';
     }
-  };
-
-  const handleCheck = (e) => {
-    setIsActive(e);
-    console.log(isActive);
   };
 
   return loading ? (
@@ -251,13 +177,6 @@ const OrderScreen = ({ match, history }) => {
                 {order.shippingAddress.postalCode},{' '}
                 {order.shippingAddress.country}
               </p>
-              {/* {order.isDelivered ? (
-                <Message variant='success'>
-                  Delivered on {order.deliveredAt}
-                </Message>
-              ) : (
-                <Message variant='danger'>Not Delivered</Message>
-              )} */}
             </ListGroup.Item>
 
             <ListGroup.Item>
@@ -344,54 +263,82 @@ const OrderScreen = ({ match, history }) => {
               </ListGroup.Item>
               {!order.isPaid && (
                 <ListGroup.Item>
-                  <Form.Check
-                    type='checkbox'
-                    label='Agreed to terms and conditions'
-                    id='termsConditons'
-                    name='termsConditons'
-                    onChange={(e) => handleCheck(!e.target.checked)}
-                  ></Form.Check>
-                </ListGroup.Item>
-              )}
-              {!order.isPaid && (
-                <ListGroup.Item>
-                  {loadingSession && <Loader />}
-                  {!sdkReady ? (
-                    <Loader />
-                  ) : (
-                    <Button
-                      type='button'
-                      className='btn-block'
-                      value='Pay with Lightbox'
-                      onClick={showLightBoxView}
-                    >
-                      Pay with Lightbox
-                    </Button>
-                    // <PayPalButton
-                    //   amount={order.totalPrice}
-                    //   onSuccess={successPaymentHandler}
-                    // />
+                  {sessionError && (
+                    <Message variant='danger'>
+                      Payment initialization failed: {sessionError}
+                    </Message>
                   )}
-                </ListGroup.Item>
-              )}
-              {!order.isPaid && (
-                <ListGroup.Item>
-                  {loadingSession && <Loader />}
-                  {!sdkReady ? (
-                    <Loader />
-                  ) : (
-                    <Button
-                      type='button'
-                      className='btn-block'
-                      value='Pay with Payment Page'
-                      onClick={showPaymentPage}
-                    >
-                      Pay with Payment Page
-                    </Button>
-                    // <PayPalButton
-                    //   amount={order.totalPrice}
-                    //   onSuccess={successPaymentHandler}
-                    // />
+                  <Button
+                    type='button'
+                    className='btn-block'
+                    disabled={!order || loading || loadingSession || initiatingPayment || !userInfo || !order.paymentProvider}
+                    onClick={async () => {
+                      console.log('Initiating payment for provider:', order.paymentProvider);
+                      setInitiatingPayment(true);
+                      try {
+                        const providerName = order.paymentProvider || 'combank';
+                        console.log('Creating payment session for:', providerName);
+                        
+                        const sessionData = await dispatch(createPaymentSession(orderId, providerName));
+                        console.log('Session data received:', sessionData);
+                        
+                        console.log('Full session data structure:', JSON.stringify(sessionData, null, 2));
+                        
+                        let redirectUrl = null;
+                        
+                        // Check multiple possible locations for the redirect URL
+                        if (sessionData?.data?.redirectUrl) {
+                          redirectUrl = sessionData.data.redirectUrl;
+                        } else if (sessionData?.redirectUrl) {
+                          redirectUrl = sessionData.redirectUrl;
+                        } else if (sessionData?.data?.links) {
+                          // Check PayPal links structure
+                          const approveLink = sessionData.data.links.find(link => link.rel === 'approve');
+                          redirectUrl = approveLink?.href;
+                        }
+                        
+                        if (redirectUrl) {
+                          console.log('Redirecting to:', redirectUrl);
+                          window.location.href = redirectUrl;
+                        } else {
+                          console.error('No redirect URL found in response:', sessionData);
+                          setInitiatingPayment(false);
+                        }
+                      } catch (error) {
+                        console.error('Payment initiation failed:', error);
+                        setInitiatingPayment(false);
+                      }
+                    }}
+                  >
+                    {(loadingSession || initiatingPayment) ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                        />
+                        {' '}Initializing Payment...
+                      </>
+                    ) : (
+                      'Initiate Payment'
+                    )}
+                  </Button>
+                  {(!order || loading) && (
+                    <div className="text-muted small mt-2">
+                      Loading order details...
+                    </div>
+                  )}
+                  {order && !userInfo && (
+                    <div className="text-muted small mt-2">
+                      Please log in to continue.
+                    </div>
+                  )}
+                  {order && userInfo && !order.paymentProvider && (
+                    <div className="text-muted small mt-2">
+                      No payment method selected for this order.
+                    </div>
                   )}
                 </ListGroup.Item>
               )}
@@ -410,19 +357,6 @@ const OrderScreen = ({ match, history }) => {
                     </Button>
                   </ListGroup.Item>
                 )} */}
-              {!order.isPaid && (
-                <ListGroup.Item>
-                  <Row>
-                    <Col>
-                      <Image
-                        src='/images/bank-logo.jpg'
-                        alt='Bank logos'
-                        fluid
-                      />
-                    </Col>
-                  </Row>
-                </ListGroup.Item>
-              )}
             </ListGroup>
           </Card>
         </Col>

@@ -35,6 +35,7 @@ import {
   orderListMyReducer,
   orderListReducer,
   orderSessionReducer,
+  orderValidatePaymentReducer,
 } from './reducers/orderReducers';
 import { carouselListReducer } from './reducers/carouselReducers';
 import { wishlistReducer } from './reducers/wishlistReducers';
@@ -59,6 +60,7 @@ const reducer = combineReducers({
   orderCreate: orderCreateReducer,
   orderDetails: orderDetailsReducer,
   sessionDetails: orderSessionReducer,
+  orderSession: orderSessionReducer,
   orderPay: orderPayReducer,
   orderDeliver: orderDeliverReducer,
   orderListMy: orderListMyReducer,
@@ -71,6 +73,7 @@ const reducer = combineReducers({
   groupUpdate: productGroupUpdateReducer,
   wishlist: wishlistReducer,
   coupon: couponReducer,
+  orderValidatePayment: orderValidatePaymentReducer,
 });
 
 const cartItemsFromStorage = localStorage.getItem('cartItems')

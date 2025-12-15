@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -10,6 +11,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 export class PaymentsController {
   constructor(private paymentsService: PaymentsService) {}
 
+  @Public()
   @Get('providers')
   @ApiOperation({ summary: 'Get available payment providers' })
   getAvailableProviders() {
@@ -18,22 +20,7 @@ export class PaymentsController {
     };
   }
 
-  @Post(':provider/:id')
-  @ApiOperation({ summary: 'Create payment session for specified provider' })
-  async createPaymentSession(
-    @Param('provider') provider: string,
-    @Param('id') orderId: string,
-  ) {
-    return this.paymentsService.createPaymentSession(orderId, provider);
-  }
-
-  // Backward compatibility
-  @Post('combank/:id')
-  @ApiOperation({ summary: 'Create Commercial Bank payment session' })
-  async createCombankSession(@Param('id') id: string) {
-    return this.paymentsService.createCombankSession(id);
-  }
-
+  // Specific routes must come before generic parameter routes
   @Post('validate/:id')
   @ApiOperation({ summary: 'Validate payment for order' })
   async validatePayment(
@@ -50,6 +37,22 @@ export class PaymentsController {
     @Body() refundData: { amount?: number },
   ) {
     return this.paymentsService.refundPayment(orderId, refundData.amount);
+  }
+
+  // Backward compatibility
+  @Post('combank/:id')
+  @ApiOperation({ summary: 'Create Commercial Bank payment session' })
+  async createCombankSession(@Param('id') id: string) {
+    return this.paymentsService.createCombankSession(id);
+  }
+
+  @Post(':provider/:id')
+  @ApiOperation({ summary: 'Create payment session for specified provider' })
+  async createPaymentSession(
+    @Param('provider') provider: string,
+    @Param('id') orderId: string,
+  ) {
+    return this.paymentsService.createPaymentSession(orderId, provider);
   }
 }
 

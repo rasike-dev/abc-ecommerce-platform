@@ -1,15 +1,15 @@
 import axios from 'axios';
-import { CART_CLEAR_ITEMS } from '../constants/cartConstants';
+import { logout } from './userActions';
 import {
   ORDER_CREATE_REQUEST,
   ORDER_CREATE_SUCCESS,
   ORDER_CREATE_FAIL,
-  ORDER_DETAILS_FAIL,
-  ORDER_DETAILS_SUCCESS,
   ORDER_DETAILS_REQUEST,
+  ORDER_DETAILS_SUCCESS,
+  ORDER_DETAILS_FAIL,
+  ORDER_PAY_REQUEST,
   ORDER_PAY_FAIL,
   ORDER_PAY_SUCCESS,
-  ORDER_PAY_REQUEST,
   ORDER_LIST_MY_REQUEST,
   ORDER_LIST_MY_SUCCESS,
   ORDER_LIST_MY_FAIL,
@@ -22,8 +22,13 @@ import {
   ORDER_SESSION_REQUEST,
   ORDER_SESSION_SUCCESS,
   ORDER_SESSION_FAIL,
+  ORDER_CREATE_PAYMENT_SESSION_REQUEST,
+  ORDER_CREATE_PAYMENT_SESSION_SUCCESS,
+  ORDER_CREATE_PAYMENT_SESSION_FAIL,
+  ORDER_VALIDATE_PAYMENT_REQUEST,
+  ORDER_VALIDATE_PAYMENT_SUCCESS,
+  ORDER_VALIDATE_PAYMENT_FAIL,
 } from '../constants/orderConstants';
-import { logout } from './userActions';
 
 export const createOrder = (order) => async (dispatch, getState) => {
   try {
@@ -48,11 +53,6 @@ export const createOrder = (order) => async (dispatch, getState) => {
       type: ORDER_CREATE_SUCCESS,
       payload: data,
     });
-    dispatch({
-      type: CART_CLEAR_ITEMS,
-      payload: data,
-    });
-    localStorage.removeItem('cartItems');
   } catch (error) {
     const message =
       error.response && error.response.data.message
@@ -105,10 +105,10 @@ export const getOrderDetails = (id) => async (dispatch, getState) => {
   }
 };
 
-export const getSessionDetails = (id) => async (dispatch, getState) => {
+export const createPaymentSession = (orderId, providerName) => async (dispatch, getState) => {
   try {
     dispatch({
-      type: ORDER_SESSION_REQUEST,
+      type: ORDER_CREATE_PAYMENT_SESSION_REQUEST,
     });
 
     const {
@@ -117,16 +117,22 @@ export const getSessionDetails = (id) => async (dispatch, getState) => {
 
     const config = {
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${userInfo.token}`,
       },
     };
 
-    const { data } = await axios.get(`/api/payments/combank/${id}`, config);
+    const { data } = await axios.post(
+      `/api/payments/${providerName}/${orderId}`,
+      {},
+      config
+    );
 
     dispatch({
-      type: ORDER_SESSION_SUCCESS,
+      type: ORDER_CREATE_PAYMENT_SESSION_SUCCESS,
       payload: data,
     });
+    return data; // Return payment session data (e.g., redirect URL)
   } catch (error) {
     const message =
       error.response && error.response.data.message
@@ -136,16 +142,58 @@ export const getSessionDetails = (id) => async (dispatch, getState) => {
       dispatch(logout());
     }
     dispatch({
-      type: ORDER_SESSION_FAIL,
+      type: ORDER_CREATE_PAYMENT_SESSION_FAIL,
       payload: message,
     });
+    throw error; // Re-throw to be caught by PlaceOrderScreen
   }
 };
 
-export const payOrder = (orderId, paymentResult) => async (
-  dispatch,
-  getState
-) => {
+export const validatePayment = (orderId, paymentData) => async (dispatch, getState) => {
+  try {
+    dispatch({
+      type: ORDER_VALIDATE_PAYMENT_REQUEST,
+    });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.post(
+      `/api/payments/validate/${orderId}`,
+      paymentData,
+      config
+    );
+
+    dispatch({
+      type: ORDER_VALIDATE_PAYMENT_SUCCESS,
+      payload: data,
+    });
+    return data; // Return validation result
+  } catch (error) {
+    const message =
+      error.response && error.response.data.message
+        ? error.response.data.message
+        : error.message;
+    if (message === 'Not authorized, token failed') {
+      dispatch(logout());
+    }
+    dispatch({
+      type: ORDER_VALIDATE_PAYMENT_FAIL,
+      payload: message,
+    });
+    throw error; // Re-throw to be caught by OrderScreen
+  }
+};
+
+export const payOrder = (orderId, paymentResult) => async (dispatch, getState) => {
   try {
     dispatch({
       type: ORDER_PAY_REQUEST,
@@ -168,17 +216,10 @@ export const payOrder = (orderId, paymentResult) => async (
       config
     );
 
-    if (data.isPaid) {
-      dispatch({
-        type: ORDER_PAY_SUCCESS,
-        payload: data,
-      });
-    } else {
-      dispatch({
-        type: ORDER_PAY_FAIL,
-        payload: 'payment failed',
-      });
-    }
+    dispatch({
+      type: ORDER_PAY_SUCCESS,
+      payload: data,
+    });
   } catch (error) {
     const message =
       error.response && error.response.data.message
@@ -304,6 +345,43 @@ export const listOrders = () => async (dispatch, getState) => {
     }
     dispatch({
       type: ORDER_LIST_FAIL,
+      payload: message,
+    });
+  }
+};
+
+export const getSessionDetails = (orderId) => async (dispatch, getState) => {
+  try {
+    dispatch({
+      type: ORDER_SESSION_REQUEST,
+    });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.get(`/api/payments/combank/${orderId}`, config);
+
+    dispatch({
+      type: ORDER_SESSION_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    const message =
+      error.response && error.response.data.message
+        ? error.response.data.message
+        : error.message;
+    if (message === 'Not authorized, token failed') {
+      dispatch(logout());
+    }
+    dispatch({
+      type: ORDER_SESSION_FAIL,
       payload: message,
     });
   }

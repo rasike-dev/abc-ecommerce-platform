@@ -54,9 +54,12 @@ export class PaypalProvider implements PaymentStrategy {
         },
       );
 
+      const approvalLink = response.data.links.find((link: any) => link.rel === 'approve');
+      
       return {
         success: true,
         transactionId: response.data.id,
+        redirectUrl: approvalLink?.href,
         providerResponse: response.data,
       };
     } catch (error) {
@@ -71,10 +74,10 @@ export class PaypalProvider implements PaymentStrategy {
   async validatePayment(paymentData: any): Promise<boolean> {
     try {
       const accessToken = await this.getAccessToken();
-      const { orderId } = paymentData;
+      const { token } = paymentData; // PayPal uses 'token' parameter for order ID
 
       const response = await axios.get(
-        `${this.apiUrl}/v2/checkout/orders/${orderId}`,
+        `${this.apiUrl}/v2/checkout/orders/${token}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -82,7 +85,23 @@ export class PaypalProvider implements PaymentStrategy {
         },
       );
 
-      return response.data.status === 'APPROVED';
+      // Check if the order is approved and capture the payment
+      if (response.data.status === 'APPROVED') {
+        const captureResponse = await axios.post(
+          `${this.apiUrl}/v2/checkout/orders/${token}/capture`,
+          {},
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+        
+        return captureResponse.data.status === 'COMPLETED';
+      }
+
+      return false;
     } catch (error) {
       console.error('PayPal validation error:', error);
       return false;

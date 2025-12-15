@@ -68,6 +68,10 @@ export class CreateOrderDto {
   paymentMethod: string;
 
   @ApiProperty()
+  @IsString()
+  paymentProvider: string;
+
+  @ApiProperty()
   @IsNumber()
   @Min(0)
   itemsPrice: number;
