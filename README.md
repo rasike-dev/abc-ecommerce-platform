@@ -1,8 +1,6 @@
 # ProShop eCommerce Platform
 
-> eCommerce platform built with the MERN stack & Redux.
-
-This is the course project for my [MERN eCommerce From Scratch](https://www.udemy.com/course/mern-ecommerce) course
+> Full-stack eCommerce platform built with React, Redux, NestJS, and MongoDB.
 
 ![screenshot](https://github.com/bradtraversy/proshop_mern/blob/master/uploads/Screen%20Shot%202020-09-29%20at%205.50.52%20PM.png)
 
@@ -16,102 +14,121 @@ This is the course project for my [MERN eCommerce From Scratch](https://www.udem
 - User profile with orders
 - Admin product management
 - Admin user management
-- Admin Order details page
+- Admin order details page
 - Mark orders as delivered option
 - Checkout process (shipping, payment method, etc)
 - PayPal / credit card integration
+- Commercial Bank payment gateway integration
 - Database seeder (products & users)
 
-## Note on Issues
-Please do not post issues here that are related to your own code when taking the course. Add those in the Udemy Q/A. If you clone THIS repo and there are issues, then you can submit
+## Tech Stack
 
-## Usage
+**Frontend:**
+- React with Hooks
+- Redux for state management
+- React Router
+- React Bootstrap
 
-### ES Modules in Node
+**Backend:**
+- NestJS (TypeScript)
+- MongoDB with Mongoose
+- JWT Authentication
+- Passport
 
-We us ECMAScript Modules in the backend in this project. Be sure to have at least Node v14.6+ or you will need to add the "--experimental-modules" flag.
+## Quick Start
 
-Also, when importing a file (not a package), be sure to add .js at the end or you will get a "module not found" error
+### Prerequisites
 
-You can also install and setup Babel if you would like
+- Node.js v16+
+- MongoDB
 
-### Env Variables
+### Environment Variables
 
-Create a .env file in then root and add the following
+Create a `.env` file in the backend directory:
 
 ```
 NODE_ENV=development
-PORT=5000
+PORT=5001
 MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_strong_random_secret_here_minimum_32_characters
+JWT_SECRET=your_strong_random_secret_minimum_32_characters
+JWT_EXPIRES_IN=30d
+CLIENT_URL=http://localhost:3000
 PAYPAL_CLIENT_ID=your_paypal_client_id
-COMBANK_API_USERNAME=your_combank_api_username
-COMBANK_API_PASSWORD=your_combank_api_password
+COMBANK_API_USERNAME=your_combank_username
+COMBANK_API_PASSWORD=your_combank_password
 COMBANK_MERCHANT_ID=your_combank_merchant_id
 COMBANK_TEST_URL=https://cbcmpgs.gateway.mastercard.com/api/nvp/version/56
 COMBANK_PROD_URL=https://cbcmpgs.gateway.mastercard.com/api/nvp/version/56
 ```
 
-**Important Security Notes:**
-- Never commit your `.env` file to version control
-- Use strong, unique values for `JWT_SECRET` (minimum 32 random characters)
-- Keep your Commercial Bank payment gateway credentials secure
-- Use different credentials for test and production environments
-- Copy `env.example` to `.env` and fill in your actual values
+### Installation
 
-### Install Dependencies (frontend & backend)
-
-```
+```bash
+# Install backend dependencies
+cd backend
 npm install
-cd frontend
+
+# Install frontend dependencies
+cd ../frontend
 npm install
 ```
 
-### Run
+### Running the Application
 
-```
-# Run frontend (:3000) & backend (:5000)
-npm run dev
+```bash
+# Run backend (from backend directory)
+cd backend
+npm run start:dev
 
-# Run backend only
-npm run server
-```
-
-## Build & Deploy
-
-```
-# Create frontend prod build
+# Run frontend (from frontend directory)
 cd frontend
-npm run build
+npm start
 ```
 
-There is a Heroku postbuild script, so if you push to Heroku, no need to build manually for deployment to Heroku
+The frontend will run on http://localhost:3000 and the backend on http://localhost:5001
 
 ### Seed Database
 
-You can use the following commands to seed the database with some sample users and products as well as destroy all data
+```bash
+# From backend directory
+cd backend
+
+# Import sample data
+npm run seed
+
+# Destroy all data
+npm run seed:destroy
+```
+
+### Sample User Logins
 
 ```
-# Import data
-npm run data:import
-
-# Destroy data
-npm run data:destroy
-```
-
-```
-Sample User Logins
-
-admin@example.com (Admin)
+Admin Account:
+admin@example.com
 123456
 
-john@example.com (Customer)
-123456
-
-jane@example.com (Customer)
+Customer Account:
+john@example.com
 123456
 ```
 
+## API Documentation
+
+Once the backend is running, access Swagger API documentation at:
+http://localhost:5001/api/docs
+
+## Build for Production
+
+```bash
+# Build frontend
+cd frontend
+npm run build
+
+# Build backend
+cd backend
+npm run build
+npm run start:prod
+```
 
 ## License
 
