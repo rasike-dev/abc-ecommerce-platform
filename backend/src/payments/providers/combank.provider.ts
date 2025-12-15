@@ -1,9 +1,11 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { PaymentStrategy, PaymentResult } from '../interfaces/payment-strategy.interface';
+import { OrderDocument } from '../../orders/schemas/order.schema';
 
 @Injectable()
-export class CombankProvider {
+export class CombankProvider implements PaymentStrategy {
   private apiUsername: string;
   private apiPassword: string;
   private merchant: string;
@@ -18,8 +20,17 @@ export class CombankProvider {
     this.clientUrl = this.configService.get('CLIENT_URL') || 'http://localhost:3000';
   }
 
-  async createCheckoutSession(order: any) {
-    const description = `${order.user.name} ${order.user.email}`;
+  getProviderName(): string {
+    return 'combank';
+  }
+
+  async createCheckoutSession(order: OrderDocument): Promise<PaymentResult> {
+    // Handle both populated and non-populated user data
+    const user = typeof order.user === 'object' && order.user && 'name' in order.user && 'email' in order.user
+      ? order.user as any
+      : { name: 'Customer', email: 'customer@example.com' };
+
+    const description = `${user.name} ${user.email}`;
 
     const requestParams = new URLSearchParams({
       apiOperation: 'CREATE_CHECKOUT_SESSION',
@@ -44,13 +55,33 @@ export class CombankProvider {
         },
       );
 
-      return this.parseResponse(response.data, order._id);
+      const parsedResponse = this.parseResponse(response.data, order._id.toString());
+
+      return {
+        success: parsedResponse.result === 'SUCCESS',
+        transactionId: parsedResponse.sessionId,
+        providerResponse: parsedResponse,
+      };
     } catch (error) {
-      throw new HttpException(
-        'Session creation failed, try again in few minutes',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return {
+        success: false,
+        error: 'Session creation failed, try again in few minutes',
+        providerResponse: error.response?.data,
+      };
     }
+  }
+
+  async validatePayment(paymentData: any): Promise<boolean> {
+    // ComBank validation logic - check successIndicator
+    const { successIndicator, orderId } = paymentData;
+    // Implement validation logic based on ComBank's response
+    return successIndicator && successIndicator.length > 0;
+  }
+
+  async refundPayment(order: OrderDocument, amount?: number): Promise<PaymentResult> {
+    // Implement refund logic for ComBank
+    // This would involve calling ComBank's refund API
+    throw new Error('Refund not implemented for ComBank yet');
   }
 
   private parseResponse(data: string, orderId: string) {

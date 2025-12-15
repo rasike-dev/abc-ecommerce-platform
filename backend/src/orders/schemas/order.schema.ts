@@ -65,6 +65,9 @@ export class Order {
   @Prop({ required: true })
   paymentMethod: string;
 
+  @Prop({ required: true })
+  paymentProvider: string; // 'combank', 'paypal', 'stripe', etc.
+
   @Prop({ type: PaymentResult, default: {} })
   paymentResult: PaymentResult;
 
