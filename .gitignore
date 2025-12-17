@@ -48,3 +48,4 @@ backend/uploads/*
 !backend/README.md
 !frontend/README.md
 
+.vercel

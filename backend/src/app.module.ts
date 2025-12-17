@@ -21,8 +21,10 @@ import { CouponsModule } from './coupons/coupons.module';
       envFilePath: '.env',
     }),
 
-    // MongoDB connection
-    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/ecommerce'),
+    // MongoDB connection - prioritize MONGODB_URI, fallback to MONGO_URI for compatibility
+    MongooseModule.forRoot(
+      process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/ecommerce',
+    ),
 
     // Feature modules
     AuthModule,

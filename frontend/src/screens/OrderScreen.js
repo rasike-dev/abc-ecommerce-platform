@@ -235,7 +235,7 @@ const OrderScreen = ({ match, history }) => {
             <ListGroup.Item>
               <h2>Billing</h2>
               <p>
-                <strong>Name: </strong> {order.user.name}
+                <strong>Name: </strong> {order.user && order.user.name ? order.user.name : 'N/A'}
               </p>
               <p>
                 <strong>Email: </strong>{' '}
