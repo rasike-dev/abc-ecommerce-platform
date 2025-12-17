@@ -14,14 +14,19 @@ try {
 @Injectable()
 export class StripeProvider implements PaymentStrategy {
   private stripe: any;
-  private clientUrl: string;
 
   constructor(private configService: ConfigService) {
     if (Stripe) {
       const secretKey = this.configService.get('STRIPE_SECRET_KEY') || '';
       this.stripe = new Stripe(secretKey, { apiVersion: '2023-10-16' });
     }
-    
+  }
+
+  /**
+   * Get client URL dynamically at runtime
+   * This ensures environment variables are available in serverless environments
+   */
+  private getClientUrl(): string {
     // Get CLIENT_URL or construct from VERCEL_URL
     let clientUrl = this.configService.get('CLIENT_URL');
     
@@ -40,13 +45,16 @@ export class StripeProvider implements PaymentStrategy {
       clientUrl = `https://${clientUrl}`;
     }
     
+    // Remove trailing slash
+    clientUrl = clientUrl.replace(/\/$/, '');
+    
     // Validate URL format
     try {
       new URL(clientUrl);
-      this.clientUrl = clientUrl;
+      return clientUrl;
     } catch (error) {
-      console.error('Invalid CLIENT_URL format:', clientUrl);
-      this.clientUrl = 'http://localhost:3000'; // Fallback to localhost
+      console.error('Invalid CLIENT_URL format:', clientUrl, error);
+      return 'http://localhost:3000'; // Fallback to localhost
     }
   }
 
@@ -63,23 +71,57 @@ export class StripeProvider implements PaymentStrategy {
     }
 
     try {
-      // Validate clientUrl before creating session
-      if (!this.clientUrl || this.clientUrl === 'http://localhost:3000') {
-        console.warn('CLIENT_URL not properly configured, using fallback');
+      // Get client URL dynamically at runtime
+      const clientUrl = this.getClientUrl();
+      
+      if (!clientUrl || clientUrl === 'http://localhost:3000') {
+        console.warn('CLIENT_URL not properly configured, using fallback:', clientUrl);
       }
       
-      const successUrl = `${this.clientUrl}/order/${order._id}?success=true&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${this.clientUrl}/order/${order._id}?cancelled=true`;
+      // Ensure clientUrl doesn't have trailing slash
+      const baseUrl = clientUrl.replace(/\/$/, '');
+      const orderId = order._id.toString();
       
-      // Validate URLs are properly formatted
+      // Construct URLs - Stripe requires absolute URLs
+      const successUrl = `${baseUrl}/order/${orderId}?success=true&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${baseUrl}/order/${orderId}?cancelled=true`;
+      
+      // Log URLs for debugging
+      console.log('Stripe URL Configuration:', {
+        clientUrl,
+        baseUrl,
+        successUrl,
+        cancelUrl,
+        orderId,
+        envClientUrl: this.configService.get('CLIENT_URL'),
+        envVercelUrl: this.configService.get('VERCEL_URL'),
+      });
+      
+      // Validate URLs are properly formatted (test with a placeholder)
       try {
-        new URL(successUrl.replace('{CHECKOUT_SESSION_ID}', 'test'));
-        new URL(cancelUrl);
+        const testSuccessUrl = successUrl.replace('{CHECKOUT_SESSION_ID}', 'test_session_id');
+        const testSuccessUrlObj = new URL(testSuccessUrl);
+        const testCancelUrlObj = new URL(cancelUrl);
+        
+        // Ensure URLs are absolute and use https (Stripe requirement)
+        if (testSuccessUrlObj.protocol !== 'https:' && testSuccessUrlObj.protocol !== 'http:') {
+          throw new Error(`Invalid protocol: ${testSuccessUrlObj.protocol}`);
+        }
+        
+        console.log('URL validation passed:', {
+          successUrlProtocol: testSuccessUrlObj.protocol,
+          cancelUrlProtocol: testCancelUrlObj.protocol,
+        });
       } catch (urlError) {
-        console.error('Invalid URL format for Stripe redirects:', { successUrl, cancelUrl });
+        console.error('Invalid URL format for Stripe redirects:', {
+          error: urlError.message,
+          successUrl,
+          cancelUrl,
+          clientUrl,
+        });
         return {
           success: false,
-          error: `Invalid CLIENT_URL configuration: ${this.clientUrl}`,
+          error: `Invalid CLIENT_URL configuration: ${clientUrl}. Error: ${urlError.message}`,
         };
       }
       
@@ -102,7 +144,7 @@ export class StripeProvider implements PaymentStrategy {
         success_url: successUrl,
         cancel_url: cancelUrl,
         metadata: {
-          orderId: order._id.toString(),
+          orderId: orderId,
         },
       });
 
