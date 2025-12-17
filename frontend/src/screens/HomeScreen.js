@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'react-bootstrap';
 import Product from '../components/Product';
-import ProductGroup from '../components/ProductGroup';
 import Message from '../components/Message';
-import Loader from '../components/Loader';
 import Paginate from '../components/Paginate';
 import ProductCarousel from '../components/ProductCarousel';
 import Meta from '../components/Meta';
@@ -31,9 +29,6 @@ const HomeScreen = ({ match }) => {
 
   const productList = useSelector((state) => state.productList);
   const { loading, error, products, page, pages } = productList;
-
-  const groupList = useSelector((state) => state.groupList);
-  const { loading: loadingGroup, groups } = groupList;
 
   useEffect(() => {
     const filtersToSend = {

@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import { useTheme } from '../context/ThemeContext';
 
 const ThemeToggle = () => {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   return (
     <Button

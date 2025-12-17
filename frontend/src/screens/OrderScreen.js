@@ -14,15 +14,9 @@ import Message from '../components/Message';
 import Loader from '../components/Loader';
 import {
   getOrderDetails,
-  payOrder,
-  deliverOrder,
   createPaymentSession,
   validatePayment,
 } from '../actions/orderActions';
-import {
-  ORDER_PAY_RESET,
-  ORDER_DELIVER_RESET,
-} from '../constants/orderConstants';
 
 const OrderScreen = ({ match, history }) => {
   const orderId = match.params.id;
@@ -36,14 +30,8 @@ const OrderScreen = ({ match, history }) => {
   const orderDetails = useSelector((state) => state.orderDetails);
   const { order, loading, error } = orderDetails;
 
-  const orderPay = useSelector((state) => state.orderPay);
-  const { loading: loadingPay, success: successPay } = orderPay;
-
   const orderSession = useSelector((state) => state.orderSession);
-  const { loading: loadingSession, session, error: sessionError } = orderSession || {};
-
-  const orderDeliver = useSelector((state) => state.orderDeliver);
-  const { loading: loadingDeliver, success: successDeliver } = orderDeliver;
+  const { loading: loadingSession, error: sessionError } = orderSession || {};
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -55,8 +43,6 @@ const OrderScreen = ({ match, history }) => {
   // Circuit breaker constants
   const MAX_RETRY_ATTEMPTS = 3;
   const RETRY_COOLDOWN_MINUTES = 5;
-  const QUICK_RETRY_DELAY = 2000; // 2 seconds
-  const PAYMENT_TIMEOUT = 30000; // 30 seconds timeout
 
   // Circuit breaker functions
   const canAttemptPayment = () => {
@@ -103,41 +89,13 @@ const OrderScreen = ({ match, history }) => {
     return Math.max(0, cooldownPeriod - timeSinceLastAttempt);
   };
 
-  // Timeout wrapper for payment requests
-  const withTimeout = (promise, timeoutMs) => {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Payment request timeout')), timeoutMs)
-      )
-    ]);
-  };
-
-  // Force reset loading state
-  const resetPaymentState = () => {
-    setInitiatingPayment(false);
-  };
-
-  // Auto-reset loading state after timeout
-  const setPaymentTimeout = () => {
-    return setTimeout(() => {
-      console.warn('Payment request timed out - forcing reset');
-      resetPaymentState();
-      handlePaymentFailure(new Error('Payment request timed out'));
-    }, PAYMENT_TIMEOUT);
-  };
-
   if (!loading && order) {
     order.itemsPrice = addDecimals(
       order.orderItems.reduce((acc, item) => acc + item.price, 0)
     );
   }
 
-  const useQuery = () => {
-    return new URLSearchParams(useLocation().search);
-  };
-
-  const query = useQuery();
+  const location = useLocation();
 
   useEffect(() => {
     if (!userInfo) {
@@ -151,12 +109,13 @@ const OrderScreen = ({ match, history }) => {
     }
 
     // This useEffect now only handles initial order loading and user authentication
-  }, [dispatch, orderId, userInfo]); // Keep original dependencies
+  }, [dispatch, orderId, userInfo, history, order]); // Keep original dependencies
 
   // Separate useEffect for handling payment returns
   useEffect(() => {
     if (!order || order.isPaid) return;
 
+    const query = new URLSearchParams(location.search);
     const sessionId = query.get('session_id'); // For Stripe
     const token = query.get('token'); // For PayPal
     const payerId = query.get('PayerID'); // For PayPal
@@ -242,11 +201,7 @@ const OrderScreen = ({ match, history }) => {
 
       handlePaymentReturn();
     }
-  }, [window.location.search, order, orderId, dispatch, history]); // Trigger when URL search params change
-
-  const deliverHandler = () => {
-    dispatch(deliverOrder(order));
-  };
+  }, [location.search, order, orderId, dispatch, history]); // Trigger when URL search params change
 
   const getMonth = (month) => {
     switch (month) {
@@ -518,7 +473,7 @@ const OrderScreen = ({ match, history }) => {
                         console.log('Payment states reset by user');
                       }}
                     >
-                      ⚠️ Force Cancel Payment
+                      <span role="img" aria-label="warning">⚠️</span> Force Cancel Payment
                     </Button>
                   )}
                   {/* Circuit Breaker Status Messages */}

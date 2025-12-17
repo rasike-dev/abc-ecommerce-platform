@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'react-bootstrap';
 import Product from '../components/Product';
@@ -24,7 +23,7 @@ const ProductsScreen = ({ match, location }) => {
 
   useEffect(() => {
     dispatch(listProducts(keyword, pageNumber, code));
-  }, [dispatch, keyword, pageNumber]);
+  }, [dispatch, keyword, pageNumber, code]);
 
   return (
     <>
