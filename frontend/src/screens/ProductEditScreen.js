@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
@@ -69,7 +69,7 @@ const ProductEditScreen = ({ match, history }) => {
         },
       };
 
-      const { data } = await axios.post('/api/upload', formData, config);
+      const { data } = await axios.post('/upload', formData, config);
 
       setImage(data);
       setUploading(false);

@@ -70,9 +70,7 @@ describe('Product List Reducer', () => {
 
 describe('Product Details Reducer', () => {
   it('should return initial state', () => {
-    expect(productDetailsReducer(undefined, {})).toEqual({
-      product: { reviews: [] },
-    });
+    expect(productDetailsReducer(undefined, {})).toEqual({});
   });
 
   it('should handle PRODUCT_DETAILS_REQUEST', () => {
@@ -147,7 +145,7 @@ describe('Product Update Reducer', () => {
   it('should handle PRODUCT_UPDATE_REQUEST', () => {
     const action = { type: PRODUCT_UPDATE_REQUEST };
     const state = productUpdateReducer(undefined, action);
-    expect(state).toEqual({ loading: true, product: {} });
+    expect(state).toEqual({ loading: true });
   });
 
   it('should handle PRODUCT_UPDATE_SUCCESS', () => {

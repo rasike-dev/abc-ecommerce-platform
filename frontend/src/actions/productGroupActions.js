@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 import {
   PRODUCT_GROUP_LIST_REQUEST,
   PRODUCT_GROUP_LIST_SUCCESS,
@@ -25,7 +25,7 @@ export const listProductGroups = (keyword = '', pageNumber = '') => async (
     dispatch({ type: PRODUCT_GROUP_LIST_REQUEST });
 
     const { data } = await axios.get(
-      `/api/groups?keyword=${keyword}&pageNumber=${pageNumber}`
+      `/groups?keyword=${keyword}&pageNumber=${pageNumber}`
     );
 
     dispatch({
@@ -47,7 +47,7 @@ export const productGroupDetails = (id) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_GROUP_DETAILS_REQUEST });
 
-    const { data } = await axios.get(`/api/groups/${id}`);
+    const { data } = await axios.get(`/groups/${id}`);
 
     dispatch({
       type: PRODUCT_GROUP_DETAILS_SUCCESS,
@@ -80,7 +80,7 @@ export const deleteProductGroup = (id) => async (dispatch, getState) => {
       },
     };
 
-    await axios.delete(`/api/groups/${id}`, config);
+    await axios.delete(`/groups/${id}`, config);
 
     dispatch({
       type: PRODUCT_GROUP_DELETE_SUCCESS,
@@ -116,7 +116,7 @@ export const createProductGroup = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.post(`/api/groups`, {}, config);
+    const { data } = await axios.post(`/groups`, {}, config);
 
     dispatch({
       type: PRODUCT_GROUP_CREATE_SUCCESS,
@@ -155,7 +155,7 @@ export const updateProductGroup = (group) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.put(
-      `/api/products/${group._id}`,
+      `/products/${group._id}`,
       group,
       config
     );

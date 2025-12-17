@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import FormContainer from '../components/FormContainer';
 import CheckoutSteps from '../components/CheckoutSteps';
 import { savePaymentMethod } from '../actions/cartActions';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const PaymentScreen = ({ history }) => {
   const cart = useSelector((state) => state.cart);
@@ -23,7 +23,7 @@ const PaymentScreen = ({ history }) => {
   useEffect(() => {
     const fetchPaymentProviders = async () => {
       try {
-        const { data } = await axios.get('/api/payments/providers');
+        const { data } = await axios.get('/payments/providers');
         setAvailableProviders(data.providers);
       } catch (error) {
         console.error('Failed to fetch payment providers:', error);

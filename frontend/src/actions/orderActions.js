@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 import { logout } from './userActions';
 import {
   ORDER_CREATE_REQUEST,
@@ -47,7 +47,7 @@ export const createOrder = (order) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.post(`/api/orders`, order, config);
+    const { data } = await axios.post(`/orders`, order, config);
 
     dispatch({
       type: ORDER_CREATE_SUCCESS,
@@ -84,7 +84,7 @@ export const getOrderDetails = (id) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/orders/${id}`, config);
+    const { data } = await axios.get(`/orders/${id}`, config);
 
     dispatch({
       type: ORDER_DETAILS_SUCCESS,
@@ -123,7 +123,7 @@ export const createPaymentSession = (orderId, providerName) => async (dispatch, 
     };
 
     const { data } = await axios.post(
-      `/api/payments/${providerName}/${orderId}`,
+      `/payments/${providerName}/${orderId}`,
       {},
       config
     );
@@ -167,7 +167,7 @@ export const validatePayment = (orderId, paymentData) => async (dispatch, getSta
     };
 
     const { data } = await axios.post(
-      `/api/payments/validate/${orderId}`,
+      `/payments/validate/${orderId}`,
       paymentData,
       config
     );
@@ -211,7 +211,7 @@ export const payOrder = (orderId, paymentResult) => async (dispatch, getState) =
     };
 
     const { data } = await axios.put(
-      `/api/orders/${orderId}/pay`,
+      `/orders/${orderId}/pay`,
       paymentResult,
       config
     );
@@ -252,7 +252,7 @@ export const deliverOrder = (order) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.put(
-      `/api/orders/${order._id}/deliver`,
+      `/orders/${order._id}/deliver`,
       {},
       config
     );
@@ -292,7 +292,7 @@ export const listMyOrders = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/orders/myorders`, config);
+    const { data } = await axios.get(`/orders/myorders`, config);
 
     dispatch({
       type: ORDER_LIST_MY_SUCCESS,
@@ -329,7 +329,7 @@ export const listOrders = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/orders`, config);
+    const { data } = await axios.get(`/orders`, config);
 
     dispatch({
       type: ORDER_LIST_SUCCESS,
@@ -366,7 +366,7 @@ export const getSessionDetails = (orderId) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/payments/combank/${orderId}`, config);
+    const { data } = await axios.get(`/payments/combank/${orderId}`, config);
 
     dispatch({
       type: ORDER_SESSION_SUCCESS,

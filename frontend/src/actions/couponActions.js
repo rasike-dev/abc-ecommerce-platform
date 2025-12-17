@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 import {
   COUPON_VALIDATE_REQUEST,
   COUPON_VALIDATE_SUCCESS,
@@ -28,7 +28,7 @@ export const validateCoupon = (code, cartTotal, productIds = []) => async (dispa
     };
 
     const { data } = await axios.post(
-      `/api/coupons/validate`,
+      `/coupons/validate`,
       { code, cartTotal, productIds },
       config
     );

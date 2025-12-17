@@ -76,6 +76,8 @@ export const hasToken = () => {
  */
 export const isTokenExpired = () => {
   const userInfo = getUserInfo();
+  // If no userInfo or no token, consider it as "expired" (needs login)
+  // But this should only be checked for authenticated endpoints, not during login
   if (!userInfo || !userInfo.token) {
     return true;
   }

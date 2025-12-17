@@ -14,17 +14,26 @@ axios.defaults.headers.common['Content-Type'] = 'application/json';
 // Request interceptor - automatically add token to requests
 axios.interceptors.request.use(
   (config) => {
-    // Check if token is expired before making request
-    if (isTokenExpired()) {
-      console.warn('Token expired, clearing auth data');
-      clearAuthData();
-      store.dispatch(logout());
-      return Promise.reject(new Error('Token expired'));
-    }
+    // Skip token checks for public endpoints (login, register)
+    const publicEndpoints = ['/auth/login', '/auth/register'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+      config.url?.includes(endpoint) || config.url?.startsWith(endpoint)
+    );
 
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Only check token expiration for authenticated endpoints
+    if (!isPublicEndpoint) {
+      // Check if token is expired before making request
+      if (isTokenExpired()) {
+        console.warn('Token expired, clearing auth data');
+        clearAuthData();
+        store.dispatch(logout());
+        return Promise.reject(new Error('Token expired'));
+      }
+
+      const token = getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
     return config;

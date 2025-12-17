@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 import {
   CAROUSEL_REQUEST,
   CAROUSEL_SUCCESS,
@@ -9,7 +9,7 @@ export const listTopCarousel = () => async (dispatch) => {
   try {
     dispatch({ type: CAROUSEL_REQUEST });
 
-    const { data } = await axios.get(`/api/carousel`);
+    const { data } = await axios.get(`/carousel`);
 
     dispatch({
       type: CAROUSEL_SUCCESS,

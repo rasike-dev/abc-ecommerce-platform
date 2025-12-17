@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from '../utils/axios';
 import {
   Row,
   Col,
@@ -362,16 +363,13 @@ const OrderScreen = ({ match, history }) => {
                       }, 5000);
                       
                       // Check backend connectivity first
-                      fetch('/api/payments/providers')
+                      axios.get('/payments/providers')
                         .then(response => {
                           console.log('Backend connectivity check:', response.status);
-                          if (!response.ok) {
-                            throw new Error(`Backend not accessible: ${response.status}`);
-                          }
-                          return response.json();
+                          console.log('Backend is accessible, proceeding with payment...');
+                          return response.data;
                         })
                         .then(() => {
-                          console.log('Backend is accessible, proceeding with payment...');
                           
                           // Now try payment creation
                           const providerName = order.paymentProvider || 'stripe';

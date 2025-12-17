@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 import {
   WISHLIST_ADD_ITEM,
   WISHLIST_REMOVE_ITEM,
@@ -22,7 +22,7 @@ export const getWishlist = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/wishlist`, config);
+    const { data } = await axios.get(`/wishlist`, config);
 
     dispatch({
       type: WISHLIST_LIST_SUCCESS,
@@ -58,7 +58,7 @@ export const addToWishlist = (productId) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.post(
-      `/api/wishlist`,
+      `/wishlist`,
       { productId },
       config
     );
@@ -94,7 +94,7 @@ export const removeFromWishlist = (productId) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.delete(`/api/wishlist/${productId}`, config);
+    const { data } = await axios.delete(`/wishlist/${productId}`, config);
 
     dispatch({
       type: WISHLIST_REMOVE_ITEM,
@@ -120,7 +120,7 @@ export const clearWishlist = () => async (dispatch, getState) => {
       },
     };
 
-    await axios.delete(`/api/wishlist`, config);
+    await axios.delete(`/wishlist`, config);
 
     dispatch({ type: WISHLIST_CLEAR });
     
