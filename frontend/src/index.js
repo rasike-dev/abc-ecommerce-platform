@@ -6,6 +6,12 @@ import './bootstrap.min.css'
 import './index.css'
 import App from './App'
 import * as serviceWorker from './serviceWorker'
+// Initialize axios interceptors
+import './utils/axios'
+
+// Validate auth on app initialization
+import { validateUserInfo } from './utils/auth'
+validateUserInfo()
 
 ReactDOM.render(
   <Provider store={store}>
