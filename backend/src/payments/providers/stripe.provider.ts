@@ -30,31 +30,51 @@ export class StripeProvider implements PaymentStrategy {
     // Get CLIENT_URL or construct from VERCEL_URL
     let clientUrl = this.configService.get('CLIENT_URL');
     
-    if (!clientUrl) {
+    console.log('Initial CLIENT_URL from config:', clientUrl);
+    
+    // If CLIENT_URL is empty, null, or undefined, try alternatives
+    if (!clientUrl || clientUrl.trim() === '') {
       // Fallback to VERCEL_URL if CLIENT_URL is not set
       const vercelUrl = this.configService.get('VERCEL_URL');
-      if (vercelUrl) {
-        clientUrl = `https://${vercelUrl}`;
+      console.log('VERCEL_URL from config:', vercelUrl);
+      
+      if (vercelUrl && vercelUrl.trim() !== '') {
+        clientUrl = vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
       } else {
+        // Last resort: use localhost (but this won't work for production)
+        console.warn('No CLIENT_URL or VERCEL_URL found, using localhost fallback');
         clientUrl = 'http://localhost:3000';
       }
     }
+    
+    // Trim all whitespace including newlines, carriage returns, tabs, etc.
+    clientUrl = clientUrl.trim().replace(/[\n\r\t]/g, '');
     
     // Ensure URL has protocol
     if (clientUrl && !clientUrl.startsWith('http://') && !clientUrl.startsWith('https://')) {
       clientUrl = `https://${clientUrl}`;
     }
     
-    // Remove trailing slash
-    clientUrl = clientUrl.replace(/\/$/, '');
+    // Remove trailing slash and any remaining whitespace
+    clientUrl = clientUrl.replace(/\/$/, '').trim();
     
     // Validate URL format
     try {
-      new URL(clientUrl);
+      const urlObj = new URL(clientUrl);
+      // Ensure it's a valid HTTP/HTTPS URL
+      if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+        throw new Error(`Invalid protocol: ${urlObj.protocol}`);
+      }
+      // Ensure it has a hostname
+      if (!urlObj.hostname || urlObj.hostname === '') {
+        throw new Error('Missing hostname');
+      }
+      console.log('Validated CLIENT_URL:', clientUrl);
       return clientUrl;
     } catch (error) {
       console.error('Invalid CLIENT_URL format:', clientUrl, error);
-      return 'http://localhost:3000'; // Fallback to localhost
+      // Don't use localhost in production - return error instead
+      throw new Error(`Invalid CLIENT_URL configuration: ${clientUrl}. ${error.message}`);
     }
   }
 
