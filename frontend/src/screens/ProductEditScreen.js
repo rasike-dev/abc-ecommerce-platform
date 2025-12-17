@@ -40,18 +40,18 @@ const ProductEditScreen = ({ match, history }) => {
       dispatch({ type: PRODUCT_UPDATE_RESET });
       history.push('/admin/productlist');
     } else {
-      if (!product.name || product._id !== productId) {
+      if (!product || !product.name || product._id !== productId) {
         dispatch(listProductDetails(productId));
       } else {
-        setName(product.name);
-        setPrice(product.price);
-        setImage(product.image);
-        setMedium(product.medium);
-        setCategory(product.category);
-        setGrade(product.grade);
-        setSubject(product.subject);
-        setTeacher(product.teacher);
-        setDescription(product.description);
+        setName(product.name || '');
+        setPrice(product.price || 0);
+        setImage(product.image || '');
+        setMedium(product.medium || '');
+        setCategory(product.category || '');
+        setGrade(product.grade || 0);
+        setSubject(product.subject || '');
+        setTeacher(product.teacher || '');
+        setDescription(product.description || '');
       }
     }
   }, [dispatch, history, productId, product, successUpdate]);

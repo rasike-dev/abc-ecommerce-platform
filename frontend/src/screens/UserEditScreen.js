@@ -32,12 +32,12 @@ const UserEditScreen = ({ match, history }) => {
       dispatch({ type: USER_UPDATE_RESET })
       history.push('/admin/userlist')
     } else {
-      if (!user.name || user._id !== userId) {
+      if (!user || !user.name || user._id !== userId) {
         dispatch(getUserDetails(userId))
       } else {
-        setName(user.name)
-        setEmail(user.email)
-        setIsAdmin(user.isAdmin)
+        setName(user.name || '')
+        setEmail(user.email || '')
+        setIsAdmin(user.isAdmin || false)
       }
     }
   }, [dispatch, history, userId, user, successUpdate])
