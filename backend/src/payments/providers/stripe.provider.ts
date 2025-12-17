@@ -21,7 +21,33 @@ export class StripeProvider implements PaymentStrategy {
       const secretKey = this.configService.get('STRIPE_SECRET_KEY') || '';
       this.stripe = new Stripe(secretKey, { apiVersion: '2023-10-16' });
     }
-    this.clientUrl = this.configService.get('CLIENT_URL') || 'http://localhost:3000';
+    
+    // Get CLIENT_URL or construct from VERCEL_URL
+    let clientUrl = this.configService.get('CLIENT_URL');
+    
+    if (!clientUrl) {
+      // Fallback to VERCEL_URL if CLIENT_URL is not set
+      const vercelUrl = this.configService.get('VERCEL_URL');
+      if (vercelUrl) {
+        clientUrl = `https://${vercelUrl}`;
+      } else {
+        clientUrl = 'http://localhost:3000';
+      }
+    }
+    
+    // Ensure URL has protocol
+    if (clientUrl && !clientUrl.startsWith('http://') && !clientUrl.startsWith('https://')) {
+      clientUrl = `https://${clientUrl}`;
+    }
+    
+    // Validate URL format
+    try {
+      new URL(clientUrl);
+      this.clientUrl = clientUrl;
+    } catch (error) {
+      console.error('Invalid CLIENT_URL format:', clientUrl);
+      this.clientUrl = 'http://localhost:3000'; // Fallback to localhost
+    }
   }
 
   getProviderName(): string {
@@ -37,6 +63,26 @@ export class StripeProvider implements PaymentStrategy {
     }
 
     try {
+      // Validate clientUrl before creating session
+      if (!this.clientUrl || this.clientUrl === 'http://localhost:3000') {
+        console.warn('CLIENT_URL not properly configured, using fallback');
+      }
+      
+      const successUrl = `${this.clientUrl}/order/${order._id}?success=true&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${this.clientUrl}/order/${order._id}?cancelled=true`;
+      
+      // Validate URLs are properly formatted
+      try {
+        new URL(successUrl.replace('{CHECKOUT_SESSION_ID}', 'test'));
+        new URL(cancelUrl);
+      } catch (urlError) {
+        console.error('Invalid URL format for Stripe redirects:', { successUrl, cancelUrl });
+        return {
+          success: false,
+          error: `Invalid CLIENT_URL configuration: ${this.clientUrl}`,
+        };
+      }
+      
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -53,8 +99,8 @@ export class StripeProvider implements PaymentStrategy {
           },
         ],
         mode: 'payment',
-        success_url: `${this.clientUrl}/order/${order._id}?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${this.clientUrl}/order/${order._id}?cancelled=true`,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         metadata: {
           orderId: order._id.toString(),
         },
